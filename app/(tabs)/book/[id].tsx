@@ -31,6 +31,36 @@ export default function BookDetailScreen() {
     setBook(found);
   }, [id]);
 
+  useEffect(() => {
+  if (!book) return;
+
+  const loadPdf = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      if (Platform.OS === 'web') {
+        const proxyUrl = `/pdf-proxy?url=${encodeURIComponent(book.pdfUrl)}`;
+        setPdfUri(proxyUrl);
+      } else {
+        const result = await downloadPdf(book.pdfUrl, book.id);
+        if (result.success && result.localUri) {
+          setPdfUri(result.localUri);
+        } else {
+          throw new Error(result.error || 'Failed to load PDF');
+        }
+      }
+    } catch (err: any) {
+      console.error('PDF loading error:', err);
+      setError(`Unable to load PDF: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  loadPdf();
+}, [book]);
+
   const toggleChat = () => setIsChatVisible((prev) => !prev);
 
   if (!book) {
@@ -54,19 +84,25 @@ export default function BookDetailScreen() {
       </View>
 
       <View style={styles.pdfContainer}>
-        <PdfViewer
-          uri={pdfUri}
-          onPageChange={Platform.OS !== 'web' ? (page: number, numberOfPages: number) => {
-            setCurrentPage(page);
-            setTotalPages(numberOfPages);
-          } : undefined}
-          onLoadComplete={Platform.OS !== 'web' ? (numberOfPages: number) => setTotalPages(numberOfPages) : undefined}
-          onError={(error: Error) => {
-            console.error('PDF viewer error:', error);
-            setError(`PDF viewer error: ${error.message}`);
-          }}
-        />
-      </View>
+  {isLoading ? (
+    <LoadingIndicator message="Loading PDF..." />
+  ) : pdfUri ? (
+    <PdfViewer
+      uri={pdfUri}
+      onPageChange={Platform.OS !== 'web' ? (page, numberOfPages) => {
+        setCurrentPage(page);
+        setTotalPages(numberOfPages);
+      } : undefined}
+      onLoadComplete={Platform.OS !== 'web' ? (numberOfPages) => setTotalPages(numberOfPages) : undefined}
+      onError={(error) => {
+        console.error('PDF viewer error:', error);
+        setError(`PDF viewer error: ${error.message}`);
+      }}
+    />
+  ) : (
+    <ErrorMessage message={error || 'PDF is not available.'} />
+  )}
+</View>
 
       <FloatingActionButton onPress={toggleChat} title="Ask AI Assistant" />
 
