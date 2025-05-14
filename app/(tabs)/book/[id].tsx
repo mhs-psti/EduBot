@@ -104,29 +104,6 @@ useEffect(() => {
     setIsChatVisible(!isChatVisible);
   };
 
-  const renderPdfViewer = () => {
-  if (!PDFReader) {
-    return <LoadingIndicator message="Loading PDF viewer..." />;
-  }
-
-  return (
-    <PDFReader
-      source={{ uri: pdfUri || '' }}
-      onPageChanged={handlePageChange}
-      onError={handleError}
-      onLoadComplete={(numberOfPages: number) => {
-        setTotalPages(numberOfPages);
-        setIsLoading(false);
-      }}
-      style={styles.pdf}
-      enablePaging
-      fitPolicy={0}
-      minScale={0.5}
-      maxScale={2.0}
-    />
-  );
-};
-
   if (!book) {
     return (
       <View style={styles.container}>
@@ -156,11 +133,7 @@ useEffect(() => {
   />
 ) : pdfUri ? (
   <View style={{ flex: 1, width: '100%', height: '100%' }}>
-  {Platform.OS === 'web' ? (
   <PdfViewerWeb pdfUrl={book.pdfUrl} />
-) : (
-  renderPdfViewer()
-)}
 </View>
 ) : (
   <ErrorMessage message="PDF source not available" />
