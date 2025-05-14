@@ -1,4 +1,5 @@
 import { type Readable } from 'node:stream';
+import { lookup } from 'mime-types';
 
 export async function GET(request: Request) {
   try {
@@ -18,10 +19,17 @@ export async function GET(request: Request) {
     // Get the PDF content
     const pdfContent = await response.arrayBuffer();
 
+    // Ensure we have a valid PDF MIME type
+    const contentType = response.headers.get('content-type') || lookup(pdfUrl) || 'application/pdf';
+
+    if (!pdfContent || pdfContent.byteLength === 0) {
+      throw new Error('Invalid or empty PDF content');
+    }
+
     // Return the PDF with appropriate headers
     return new Response(pdfContent, {
       headers: {
-        'Content-Type': 'application/pdf',
+        'Content-Type': contentType,
         'Content-Length': pdfContent.byteLength.toString(),
         'Access-Control-Allow-Origin': '*',
         'Cache-Control': 'public, max-age=3600'
@@ -29,6 +37,12 @@ export async function GET(request: Request) {
     });
   } catch (error: any) {
     console.error('PDF proxy error:', error);
-    return new Response(`Failed to fetch PDF: ${error.message}`, { status: 500 });
+    return new Response(`Failed to fetch PDF: ${error.message}`, { 
+      status: 500,
+      headers: {
+        'Content-Type': 'text/plain',
+        'Access-Control-Allow-Origin': '*'
+      }
+    });
   }
 }
