@@ -40,8 +40,7 @@ export default function BookDetailScreen() {
       setError(null);
 
       if (Platform.OS === 'web') {
-        const proxyUrl = `/pdf-proxy?url=${encodeURIComponent(book.pdfUrl)}`;
-        setPdfUri(proxyUrl);
+        setPdfUri(book.pdfUrl);
       } else {
         const result = await downloadPdf(book.pdfUrl, book.id);
         if (result.success && result.localUri) {
