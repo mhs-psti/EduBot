@@ -70,6 +70,15 @@ export default function BookDetailScreen() {
       <View style={styles.pdfContainer}>
   <PdfViewer
     uri={pdfUri}
+    onPageChange={(page: number, numberOfPages: number) => {
+      setCurrentPage(page);
+      setTotalPages(numberOfPages);
+    }}
+    onLoadComplete={(numberOfPages: number) => setTotalPages(numberOfPages)}
+    onError={(error: Error) => {
+      console.error('PDF viewer error:', error);
+      setError(`PDF viewer error: ${error.message}`);
+    }}
   />
 </View>
 
