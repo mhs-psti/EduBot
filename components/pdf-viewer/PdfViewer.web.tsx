@@ -7,7 +7,6 @@ interface PdfViewerProps {
 }
 
 export const PdfViewer: React.FC<PdfViewerProps> = ({ uri, onError }) => {
-  console.log(uri);
   if (!uri) {
     return <View style={styles.container} />;
   }
