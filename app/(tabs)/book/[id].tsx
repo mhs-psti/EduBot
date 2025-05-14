@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Text, Platform, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { books } from '../../../data/books';
 import { Book } from '../../../types/book';
@@ -8,9 +8,20 @@ import { LoadingIndicator } from '../../../components/LoadingIndicator';
 import { ErrorMessage } from '../../../components/ErrorMessage';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import { ChatView } from '../../../components/ChatView';
-import { PdfViewerWeb } from '../../../components/PdfViewerWeb';
 
-const { width, height } = Dimensions.get('window');
+const PdfViewerWeb =
+  Platform.OS === 'web'
+    ? require('../../../components/PdfViewerWeb').PdfViewerWeb
+    : null;
+
+let PDFReader: any = null;
+if (Platform.OS !== 'web') {
+  try {
+    PDFReader = require('react-native-pdf').default;
+  } catch (err) {
+    console.warn('PDFReader not loaded:', err);
+  }
+}
 
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -18,71 +29,74 @@ export default function BookDetailScreen() {
   const [pdfUri, setPdfUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isChatVisible, setIsChatVisible] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [isChatVisible, setIsChatVisible] = useState(false);
 
   useEffect(() => {
-    const foundBook = books.find(b => b.id === id);
-    if (foundBook) {
-      setBook(foundBook);
-      loadPdf(foundBook);
-    } else {
+    const found = books.find((b) => b.id === id);
+    if (!found) {
       setError('Book not found');
       setIsLoading(false);
+      return;
     }
-  }, [id]);
 
-  useEffect(() => {
-  if (book?.pdfUrl) {
-    const timeout = setTimeout(() => {
-      const proxyUrl = `/pdf-proxy?url=${encodeURIComponent(book.pdfUrl)}`;
-      setPdfUri(proxyUrl);
-    }, 100); // delay load just a bit
-    return () => clearTimeout(timeout);
-  }
-}, [book]);
+    setBook(found);
+    loadPdf(found);
+  }, [id]);
 
   const loadPdf = async (book: Book) => {
     try {
       setIsLoading(true);
       setError(null);
-      
-      if (book?.pdfUrl) {
+
+      if (Platform.OS === 'web') {
         const proxyUrl = `/pdf-proxy?url=${encodeURIComponent(book.pdfUrl)}`;
         setPdfUri(proxyUrl);
-        setIsLoading(false);
       } else {
-        // For native platforms, use the existing download logic
         const result = await downloadPdf(book.pdfUrl, book.id);
-        
         if (result.success && result.localUri) {
           setPdfUri(result.localUri);
         } else {
           throw new Error(result.error || 'Failed to load PDF');
         }
-        setIsLoading(false);
       }
     } catch (err: any) {
       console.error('PDF loading error:', err);
       setError(`Unable to load PDF: ${err.message}`);
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handlePageChange = (page: number, numberOfPages: number) => {
-    setCurrentPage(page);
-    setTotalPages(numberOfPages);
-  };
+  const toggleChat = () => setIsChatVisible((prev) => !prev);
 
-  const handleError = (error: Error) => {
-    console.error('PDF viewer error:', error);
-    setError(`PDF viewer error: ${error.message}`);
-    setIsLoading(false);
-  };
+  const renderPdf = () => {
+    if (!pdfUri) return <ErrorMessage message="PDF not available." />;
 
-  const toggleChat = () => {
-    setIsChatVisible(!isChatVisible);
+    if (Platform.OS === 'web' && PdfViewerWeb) {
+      return <PdfViewerWeb pdfUrl={pdfUri} />;
+    }
+
+    if (PDFReader) {
+      return (
+        <PDFReader
+          source={{ uri: pdfUri }}
+          onPageChanged={(page: number, numberOfPages: number) => {
+            setCurrentPage(page);
+            setTotalPages(numberOfPages);
+          }}
+          onError={(error: Error) => {
+            console.error('PDF viewer error:', error);
+            setError(`PDF viewer error: ${error.message}`);
+          }}
+          onLoadComplete={(numberOfPages: number) => setTotalPages(numberOfPages)}
+          style={styles.pdf}
+        />
+      );
+    }
+
+    return <ErrorMessage message="PDF reader not supported on this platform." />;
   };
 
   if (!book) {
@@ -105,25 +119,17 @@ export default function BookDetailScreen() {
         )}
       </View>
 
-      {isLoading ? (
-  <LoadingIndicator message="Loading PDF..." />
-) : error ? (
-  <ErrorMessage 
-    message={error}
-    onRetry={() => book && loadPdf(book)}
-  />
-) : pdfUri ? (
-  <View style={{ flex: 1, width: '100%', height: '100%' }}>
-  <PdfViewerWeb pdfUrl={book.pdfUrl} />
-</View>
-) : (
-  <ErrorMessage message="PDF source not available" />
-)}
+      <View style={styles.pdfContainer}>
+        {isLoading ? (
+          <LoadingIndicator message="Loading PDF..." />
+        ) : error ? (
+          <ErrorMessage message={error} onRetry={() => book && loadPdf(book)} />
+        ) : (
+          renderPdf()
+        )}
+      </View>
 
-      <FloatingActionButton
-        onPress={toggleChat}
-        title="Ask AI Assistant"
-      />
+      <FloatingActionButton onPress={toggleChat} title="Ask AI Assistant" />
 
       <ChatView
         visible={isChatVisible}
@@ -168,7 +174,6 @@ const styles = StyleSheet.create({
   pdf: {
     flex: 1,
     width: '100%',
-    height: '100%',
     backgroundColor: '#F5F5F5',
   },
 });
