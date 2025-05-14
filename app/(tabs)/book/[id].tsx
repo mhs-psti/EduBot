@@ -21,24 +21,6 @@ export default function BookDetailScreen() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [isChatVisible, setIsChatVisible] = useState(false);
-  const [PDFReader, setPDFReader] = useState<any>(null);
-  const [isClient, setIsClient] = useState(false);
-
-useEffect(() => {
-  if (Platform.OS === 'web') {
-    // Prevent SSR crash or early iframe mount
-    setIsClient(true);
-  }
-}, []);
-
-  useEffect(() => {
-    // Dynamically import PDFReader based on platform
-    if (Platform.OS !== 'web') {
-      import('react-native-pdf').then(module => {
-        setPDFReader(() => module.default);
-      });
-    }
-  }, []);
 
   useEffect(() => {
     const foundBook = books.find(b => b.id === id);
@@ -52,7 +34,7 @@ useEffect(() => {
   }, [id]);
 
   useEffect(() => {
-  if (Platform.OS === 'web' && book?.pdfUrl) {
+  if (book?.pdfUrl) {
     const timeout = setTimeout(() => {
       const proxyUrl = `/pdf-proxy?url=${encodeURIComponent(book.pdfUrl)}`;
       setPdfUri(proxyUrl);
@@ -66,8 +48,7 @@ useEffect(() => {
       setIsLoading(true);
       setError(null);
       
-      if (Platform.OS === 'web' && book?.pdfUrl) {
-        // Use the proxy endpoint for web platform
+      if (book?.pdfUrl) {
         const proxyUrl = `/pdf-proxy?url=${encodeURIComponent(book.pdfUrl)}`;
         setPdfUri(proxyUrl);
         setIsLoading(false);
