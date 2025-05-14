@@ -8,6 +8,7 @@ import { LoadingIndicator } from '../../../components/LoadingIndicator';
 import { ErrorMessage } from '../../../components/ErrorMessage';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import { ChatView } from '../../../components/ChatView';
+import { PdfViewer } from '../../../components/pdf-viewer/PdfViewer';
 
 const PdfViewerWeb =
   Platform.OS === 'web'
@@ -42,62 +43,9 @@ export default function BookDetailScreen() {
     }
 
     setBook(found);
-    loadPdf(found);
   }, [id]);
 
-  const loadPdf = async (book: Book) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      if (Platform.OS === 'web') {
-        const proxyUrl = `/pdf-proxy?url=${encodeURIComponent(book.pdfUrl)}`;
-        setPdfUri(proxyUrl);
-      } else {
-        const result = await downloadPdf(book.pdfUrl, book.id);
-        if (result.success && result.localUri) {
-          setPdfUri(result.localUri);
-        } else {
-          throw new Error(result.error || 'Failed to load PDF');
-        }
-      }
-    } catch (err: any) {
-      console.error('PDF loading error:', err);
-      setError(`Unable to load PDF: ${err.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const toggleChat = () => setIsChatVisible((prev) => !prev);
-
-  const renderPdf = () => {
-    if (!pdfUri) return <ErrorMessage message="PDF not available." />;
-
-    if (Platform.OS === 'web' && PdfViewerWeb) {
-      return <PdfViewerWeb pdfUrl={pdfUri} />;
-    }
-
-    if (PDFReader) {
-      return (
-        <PDFReader
-          source={{ uri: pdfUri }}
-          onPageChanged={(page: number, numberOfPages: number) => {
-            setCurrentPage(page);
-            setTotalPages(numberOfPages);
-          }}
-          onError={(error: Error) => {
-            console.error('PDF viewer error:', error);
-            setError(`PDF viewer error: ${error.message}`);
-          }}
-          onLoadComplete={(numberOfPages: number) => setTotalPages(numberOfPages)}
-          style={styles.pdf}
-        />
-      );
-    }
-
-    return <ErrorMessage message="PDF reader not supported on this platform." />;
-  };
 
   if (!book) {
     return (
@@ -120,14 +68,19 @@ export default function BookDetailScreen() {
       </View>
 
       <View style={styles.pdfContainer}>
-        {isLoading ? (
-          <LoadingIndicator message="Loading PDF..." />
-        ) : error ? (
-          <ErrorMessage message={error} onRetry={() => book && loadPdf(book)} />
-        ) : (
-          renderPdf()
-        )}
-      </View>
+  <PdfViewer
+    uri={pdfUri}
+    onPageChange={(page: number, numberOfPages: number) => {
+      setCurrentPage(page);
+      setTotalPages(numberOfPages);
+    }}
+    onLoadComplete={(numberOfPages: number) => setTotalPages(numberOfPages)}
+    onError={(error: Error) => {
+      console.error('PDF viewer error:', error);
+      setError(`PDF viewer error: ${error.message}`);
+    }}
+  />
+</View>
 
       <FloatingActionButton onPress={toggleChat} title="Ask AI Assistant" />
 
