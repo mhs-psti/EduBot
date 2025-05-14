@@ -68,24 +68,22 @@ export default function BookDetailScreen() {
       </View>
 
       <View style={styles.pdfContainer}>
-        {{if(Platform.OS === 'web') ? (
-        <PdfViewer
-    uri={pdfUri}
-  />
-        )
-        : (<PdfViewer
-    uri={pdfUri}
-    onPageChange={(page: number, numberOfPages: number) => {
-      setCurrentPage(page);
-      setTotalPages(numberOfPages);
-    }}
-    onLoadComplete={(numberOfPages: number) => setTotalPages(numberOfPages)}
-    onError={(error: Error) => {
-      console.error('PDF viewer error:', error);
-      setError(`PDF viewer error: ${error.message}`);
-    }}
-  />)
-        )}}
+  {Platform.OS === 'web' ? (
+    <PdfViewer uri={pdfUri} />
+  ) : (
+    <PdfViewer
+      uri={pdfUri}
+      onPageChange={(page: number, numberOfPages: number) => {
+        setCurrentPage(page);
+        setTotalPages(numberOfPages);
+      }}
+      onLoadComplete={(numberOfPages: number) => setTotalPages(numberOfPages)}
+      onError={(error: Error) => {
+        console.error('PDF viewer error:', error);
+        setError(`PDF viewer error: ${error.message}`);
+      }}
+    />
+  )}
 </View>
 
       <FloatingActionButton onPress={toggleChat} title="Ask AI Assistant" />
