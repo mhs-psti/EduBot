@@ -10,20 +10,6 @@ import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import { ChatView } from '../../../components/ChatView';
 import { PdfViewer } from '../../../components/pdf-viewer/PdfViewer';
 
-const PdfViewerWeb =
-  Platform.OS === 'web'
-    ? require('../../../components/PdfViewerWeb').PdfViewerWeb
-    : null;
-
-let PDFReader: any = null;
-if (Platform.OS !== 'web') {
-  try {
-    PDFReader = require('react-native-pdf').default;
-  } catch (err) {
-    console.warn('PDFReader not loaded:', err);
-  }
-}
-
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [book, setBook] = useState<Book | null>(null);
@@ -68,23 +54,19 @@ export default function BookDetailScreen() {
       </View>
 
       <View style={styles.pdfContainer}>
-  {Platform.OS === 'web' ? (
-    <PdfViewer uri={pdfUri} />
-  ) : (
-    <PdfViewer
-      uri={pdfUri}
-      onPageChange={(page: number, numberOfPages: number) => {
-        setCurrentPage(page);
-        setTotalPages(numberOfPages);
-      }}
-      onLoadComplete={(numberOfPages: number) => setTotalPages(numberOfPages)}
-      onError={(error: Error) => {
-        console.error('PDF viewer error:', error);
-        setError(`PDF viewer error: ${error.message}`);
-      }}
-    />
-  )}
-</View>
+        <PdfViewer
+          uri={pdfUri}
+          onPageChange={Platform.OS !== 'web' ? (page: number, numberOfPages: number) => {
+            setCurrentPage(page);
+            setTotalPages(numberOfPages);
+          } : undefined}
+          onLoadComplete={Platform.OS !== 'web' ? (numberOfPages: number) => setTotalPages(numberOfPages) : undefined}
+          onError={(error: Error) => {
+            console.error('PDF viewer error:', error);
+            setError(`PDF viewer error: ${error.message}`);
+          }}
+        />
+      </View>
 
       <FloatingActionButton onPress={toggleChat} title="Ask AI Assistant" />
 
