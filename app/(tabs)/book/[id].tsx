@@ -68,7 +68,12 @@ export default function BookDetailScreen() {
       </View>
 
       <View style={styles.pdfContainer}>
-  <PdfViewer
+        {{if(Platform.OS === 'web') ? (
+        <PdfViewer
+    uri={pdfUri}
+  />
+        )
+        : (<PdfViewer
     uri={pdfUri}
     onPageChange={(page: number, numberOfPages: number) => {
       setCurrentPage(page);
@@ -79,7 +84,8 @@ export default function BookDetailScreen() {
       console.error('PDF viewer error:', error);
       setError(`PDF viewer error: ${error.message}`);
     }}
-  />
+  />)
+        )}}
 </View>
 
       <FloatingActionButton onPress={toggleChat} title="Ask AI Assistant" />
