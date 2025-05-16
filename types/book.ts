@@ -1,4 +1,4 @@
-export interface Book {
+export interface Dataset {
   id: string;
   name: string;
   description: string | null;
@@ -13,5 +13,5 @@ export interface Book {
 
 export interface ApiResponse {
   code: number;
-  data: Book[];
+  data: Dataset[];
 }
