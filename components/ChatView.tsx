@@ -13,7 +13,7 @@ import Animated, {
   withTiming,
   Easing,
 } from 'react-native-reanimated';
-import { Book } from '../types/book';
+import { Dataset } from '../types/dataset';
 import { ErrorMessage } from './ErrorMessage';
 import { LoadingIndicator } from './LoadingIndicator';
 
