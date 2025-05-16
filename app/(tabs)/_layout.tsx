@@ -51,6 +51,13 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <User size={22} color={color} />,
         }}
       />
+      {/* Hidden screens */}
+      <Tabs.Screen
+        name="book/[id]"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
