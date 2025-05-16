@@ -39,7 +39,7 @@ export const BookCard: React.FC<BookCardProps> = ({ book }) => {
           resizeMode="cover"
         />
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>Jumlah BAB: {document_count}</Text>
+          <Text style={styles.badgeText}>Jumlah BAB: {book.document_count}</Text>
         </View>
         <View style={styles.contentContainer}>
           <Text style={styles.title} numberOfLines={2}>{book.name}</Text>
