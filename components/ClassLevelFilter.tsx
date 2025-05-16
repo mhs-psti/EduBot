@@ -94,8 +94,6 @@ export const ClassLevelFilter: React.FC<ClassLevelFilterProps> = ({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
-    zIndex: 1000,
     width: 160,
     marginRight: 16,
   },
@@ -115,14 +113,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#3F51B5',
   },
-  dropdown: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
+    dropdown: {
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
     marginTop: 4,
+    overflow: 'hidden', // tambahkan untuk jaga-jaga
     ...Platform.select({
       ios: {
         shadowColor: '#000',
