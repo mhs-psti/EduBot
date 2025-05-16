@@ -1,9 +1,17 @@
 export interface Book {
   id: string;
-  title: string;
-  subject: string;
-  classLevel: 'VII' | 'VIII' | 'IX';
-  description: string;
-  coverImage: string;
-  pdfUrl: string;
+  name: string;
+  description: string | null;
+  language: string;
+  create_date: string;
+  update_date: string;
+  document_count: number;
+  chunk_count: number;
+  status: string;
+  avatar: string;
+}
+
+export interface ApiResponse {
+  code: number;
+  data: Book[];
 }
