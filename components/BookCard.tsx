@@ -9,7 +9,7 @@ import {
   Dimensions
 } from 'react-native';
 import { router } from 'expo-router';
-import { Book } from '../types/book';
+import { Dataset } from '../types/dataset';
 
 interface BookCardProps {
   book: Book;
