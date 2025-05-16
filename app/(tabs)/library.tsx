@@ -21,9 +21,13 @@ export default function LibraryScreen() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const data = await fetchDatasets();
-        console.log(data);
-        setBooks(data);
+        const response = await fetchDatasets();
+if (Array.isArray(response?.data)) {
+  setBooks(response.data);
+} else {
+  console.warn("API response is not an array", response);
+  setBooks([]); // prevent crash
+}
       } catch (err) {
         console.error('Error loading datasets:', err);
       } finally {
