@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { books } from '../../../data/books';
-import { Book } from '../../../types/book';
+import { Dataset } from '../../../types/dataset';
 import { downloadPdf } from '../../../utils/downloadPdf';
 import { LoadingIndicator } from '../../../components/LoadingIndicator';
 import { ErrorMessage } from '../../../components/ErrorMessage';
