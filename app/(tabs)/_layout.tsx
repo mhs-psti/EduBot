@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
-import { BookOpen, Home, History, User } from 'lucide-react-native';
+import { BookOpen, Chrome as Home, History, User } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
