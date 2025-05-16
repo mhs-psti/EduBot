@@ -22,6 +22,7 @@ export default function LibraryScreen() {
     const loadData = async () => {
       try {
         const data = await fetchDatasets();
+        console.log(data);
         setBooks(data);
       } catch (err) {
         console.error('Error loading datasets:', err);
