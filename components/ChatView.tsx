@@ -24,6 +24,7 @@ interface ChatViewProps {
 }
 
 const { width, height } = Dimensions.get('window');
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 export const ChatView: React.FC<ChatViewProps> = ({
   visible,
@@ -35,7 +36,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
   const translateY = useSharedValue(height);
 
   // Mock chat URL - this would be replaced with your actual AI chat service
-  const chatUrl = 'http://57.155.89.180/chat/share?shared_id=23c09a822fe211f0888b82b4a2c8f9a7';
+  const chatUrl = `${API_URL}/chat/share?shared_id=23c09a822fe211f0888b82b4a2c8f9a7`;
   
   React.useEffect(() => {
     translateY.value = withTiming(
