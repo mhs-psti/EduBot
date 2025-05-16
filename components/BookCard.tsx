@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { Dataset } from '../types/dataset';
 
 interface BookCardProps {
-  book: Book;
+  book: Dataset;
 }
 
 const { width } = Dimensions.get('window');
@@ -34,18 +34,18 @@ export const BookCard: React.FC<BookCardProps> = ({ book }) => {
     >
       <View style={styles.card}>
         <Image 
-          source={{ uri: book.coverImage }} 
+          source={{ uri: book.avatar }} 
           style={styles.coverImage}
           resizeMode="cover"
         />
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>Class {book.classLevel}</Text>
+          <Text style={styles.badgeText}>Class VII</Text>
         </View>
         <View style={styles.contentContainer}>
-          <Text style={styles.title} numberOfLines={2}>{book.title}</Text>
-          <Text style={styles.subject}>{book.subject}</Text>
+          <Text style={styles.title} numberOfLines={2}>{book.name}</Text>
+          <Text style={styles.subject}>{book.language}</Text>
           <Text style={styles.description} numberOfLines={2}>
-            {book.description}
+            {book.description || 'No description'}
           </Text>
         </View>
       </View>
