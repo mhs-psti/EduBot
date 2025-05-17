@@ -22,7 +22,7 @@ export const BookCard: React.FC<BookCardProps> = ({ book }) => {
   const handlePress = () => {
     router.push({
       pathname: `/(tabs)/book/[id]`,
-      params: { id: book.id }
+      params: { id: book.id, name: book.name }
     });
   };
 
