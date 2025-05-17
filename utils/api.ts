@@ -76,7 +76,10 @@ export async function getDocumentsByDatasetId({
       ...(documentId && { id: documentId }),
     });
 
-    console.log(datasetId);
+    if (!datasetId) {
+  throw new Error('datasetId is required');
+}
+    
     const response = await fetch(`${API_URL}/api/v1/datasets/${datasetId}/documents?${params}`, {
       headers: {
         Authorization: `Bearer ${API_KEY}`,
