@@ -67,7 +67,10 @@ export default function BookDetailScreen() {
           : null;
 
         return (
-          <View key={doc.id} style={styles.documentCard}>
+          <TouchableOpacity
+                onPress={() => router.push(`/document/preview/${doc.id}`)}
+              >
+                <View key={doc.id} style={styles.documentCard}>
             {imageUrl && (
               <Image
                 source={{ uri: imageUrl }}
@@ -83,6 +86,7 @@ export default function BookDetailScreen() {
               <Text style={styles.docMeta}>Uploaded: {new Date(doc.create_date).toLocaleString()}</Text>
             </View>
           </View>
+              </TouchableOpacity>
         );
       })}
     </ScrollView>
