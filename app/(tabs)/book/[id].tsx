@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Platform, ScrollView, TouchableOpacity, Image } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, router } from 'expo-router';
 import { Document } from '../../../types/document';
 import { ErrorMessage } from '../../../components/ErrorMessage';
 import { LoadingIndicator } from '../../../components/LoadingIndicator';
