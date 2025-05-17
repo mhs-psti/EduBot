@@ -19,7 +19,7 @@ export default function BookDetailScreen() {
         setIsLoading(true);
         setError(null);
 
-        const response = await getDocumentsByDatasetId(id);
+        const response = await await getDocumentsByDatasetId({ datasetId: id });
         console.log(response);
 
         if (response?.code === 0 && Array.isArray(response.data.docs)) {
