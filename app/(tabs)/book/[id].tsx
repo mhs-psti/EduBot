@@ -1,31 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Platform, ScrollView, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { Dataset } from '../../../types/dataset';
 import { Document } from '../../../types/document';
 import { ErrorMessage } from '../../../components/ErrorMessage';
 import { LoadingIndicator } from '../../../components/LoadingIndicator';
 import { getDocumentsByDatasetId } from '../../../utils/api';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const BASE_IMAGE_URL = `${API_URL}/v1/document/image`;
 
 export default function BookDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+
   useEffect(() => {
     const loadDocuments = async () => {
       try {
         setIsLoading(true);
         setError(null);
 
-        const response = await await getDocumentsByDatasetId({ datasetId: id });
-        console.log(response);
+        const response = await getDocumentsByDatasetId({ datasetId: id });
 
         if (response?.code === 0 && Array.isArray(response.data.docs)) {
           setDocuments(response.data.docs);
         } else {
-          console.log(response);
           throw new Error(response?.message || 'Unexpected response');
         }
       } catch (err: any) {
@@ -60,13 +60,26 @@ export default function BookDetailScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>Document List</Text>
-      {documents.map((doc) => (
-        <View key={doc.id} style={styles.documentCard}>
-          <Text style={styles.docTitle}>{doc.name}</Text>
-          <Text style={styles.docMeta}>Type: {doc.type} | Size: {doc.size} KB</Text>
-          <Text style={styles.docMeta}>Uploaded: {new Date(doc.create_date).toLocaleString()}</Text>
-        </View>
-      ))}
+      {documents.map((doc) => {
+        const imageUrl = doc.thumbnail
+          ? `${BASE_IMAGE_URL}/${id}-${doc.thumbnail}`
+          : null;
+
+        return (
+          <View key={doc.id} style={styles.documentCard}>
+            {imageUrl && (
+              <Image
+                source={{ uri: imageUrl }}
+                style={styles.thumbnail}
+                resizeMode="cover"
+              />
+            )}
+            <Text style={styles.docTitle}>{doc.name}</Text>
+            <Text style={styles.docMeta}>Type: {doc.type} | Size: {doc.size} KB</Text>
+            <Text style={styles.docMeta}>Uploaded: {new Date(doc.create_date).toLocaleString()}</Text>
+          </View>
+        );
+      })}
     </ScrollView>
   );
 }
@@ -93,6 +106,13 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     backgroundColor: '#F5F5F5',
+  },
+  thumbnail: {
+    width: '100%',
+    height: 160,
+    marginBottom: 12,
+    borderRadius: 8,
+    backgroundColor: '#E0E0E0',
   },
   docTitle: {
     fontSize: 16,
