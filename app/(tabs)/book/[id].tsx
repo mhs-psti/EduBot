@@ -13,6 +13,8 @@ export default function BookDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+console.log('Received ID:', id);
+  
   useEffect(() => {
     const loadDocuments = async () => {
       try {
