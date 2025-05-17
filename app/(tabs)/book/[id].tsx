@@ -12,8 +12,6 @@ export default function BookDetailScreen() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-console.log('Received ID:', id);
   
   useEffect(() => {
     const loadDocuments = async () => {
@@ -22,6 +20,7 @@ console.log('Received ID:', id);
         setError(null);
 
         const response = await getDocumentsByDatasetId(id);
+        console.log(response);
 
         if (response?.code === 0 && Array.isArray(response.data.docs)) {
           setDocuments(response.data.docs);
