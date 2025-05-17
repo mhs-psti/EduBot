@@ -49,7 +49,7 @@ export async function fetchDatasets({
   }
 }
 
-export async function fetchDocuments(datasetId: string) {
+export async function getDocumentsByDatasetId(datasetId: string) {
   const res = await fetch(`${API_URL}/api/v1/datasets/${datasetId}/documents?page=1&page_size=20`, {
     headers: { Authorization: `Bearer ${API_KEY}` },
   });
