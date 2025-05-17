@@ -14,6 +14,7 @@ import { LoadingIndicator } from '../../../../components/LoadingIndicator';
 import { ErrorMessage } from '../../../../components/ErrorMessage';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const BASE_DOCUMENT_URL = `${API_URL}/v1/document/get`;
 
 export default function DocumentPreviewScreen() {
   const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
@@ -29,10 +30,9 @@ export default function DocumentPreviewScreen() {
     try {
       setIsLoading(true);
       setError(null);
-      
-      // TODO: Replace with actual API call to get document URL
-      const mockUrl = `${API_URL}/document/${id}?ext=pdf&prefix=file`;
-      setPdfUrl(mockUrl);
+
+      const pdfUrl = `${BASE_DOCUMENT_URL}/${id}`;
+      setPdfUrl(pdfUrl);
       
     } catch (err: any) {
       setError(err.message || 'Failed to load document');
