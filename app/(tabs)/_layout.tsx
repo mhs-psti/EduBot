@@ -58,6 +58,12 @@ export default function TabLayout() {
           href: null,
         }}
       />
+      <Tabs.Screen
+        name="document/index"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }
