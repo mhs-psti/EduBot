@@ -62,8 +62,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="document"
         options={{
-          href: null,
-          tabBarButton: () => null,
+          href: null
         }}
       />
     </Tabs>
