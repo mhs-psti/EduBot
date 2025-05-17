@@ -1,7 +1,7 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
-import { BookOpen, Home, History, User } from 'lucide-react-native';
+import { BookOpen, Home, History, User, FileText } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
@@ -51,11 +51,19 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <User size={22} color={color} />,
         }}
       />
+      
       {/* Hidden screens */}
       <Tabs.Screen
         name="book/[id]"
         options={{
           href: null,
+        }}
+      />
+      <Tabs.Screen
+        name="document"
+        options={{
+          href: null,
+          tabBarButton: () => null,
         }}
       />
     </Tabs>
