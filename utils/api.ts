@@ -89,7 +89,7 @@ export async function getDocumentsByDatasetId({
     const data = await response.json();
 
     if (data.code === 102) {
-      return { code: data.code, data: [] };
+      return { code: data.code, message: data.message };
     }
 
     return data;
