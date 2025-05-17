@@ -68,7 +68,10 @@ export default function BookDetailScreen() {
 
         return (
           <TouchableOpacity
-                onPress={() => router.push(`/document/preview/${doc.id}`)}
+                onPress={() => router.push({
+                  pathname: `/document/preview/${doc.id}`,
+                  params: { id: doc.id, name: doc.name }
+                })}
               >
                 <View key={doc.id} style={styles.documentCard}>
             {imageUrl && (
