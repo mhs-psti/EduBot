@@ -11,7 +11,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const BASE_IMAGE_URL = `${API_URL}/v1/document/image`;
 
 export default function BookDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +60,7 @@ export default function BookDetailScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>Document List</Text>
+      <Text style={styles.title}>{name || 'Document List'}</Text>
       {documents.map((doc) => {
         const imageUrl = doc.thumbnail
           ? `${BASE_IMAGE_URL}/${id}-${doc.thumbnail}`
