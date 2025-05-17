@@ -24,6 +24,7 @@ export default function BookDetailScreen() {
         if (response?.code === 0 && Array.isArray(response.data.docs)) {
           setDocuments(response.data.docs);
         } else {
+          console.log(response);
           throw new Error(response?.message || 'Unexpected response');
         }
       } catch (err: any) {
