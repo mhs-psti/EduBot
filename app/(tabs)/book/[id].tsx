@@ -74,9 +74,11 @@ export default function BookDetailScreen() {
                 resizeMode="cover"
               />
             )}
-            <Text style={styles.docTitle}>{doc.name}</Text>
-            <Text style={styles.docMeta}>Type: {doc.type} | Size: {doc.size} KB</Text>
-            <Text style={styles.docMeta}>Uploaded: {new Date(doc.create_date).toLocaleString()}</Text>
+            <View style={styles.documentInfo}>
+              <Text style={styles.docTitle}>{doc.name}</Text>
+              <Text style={styles.docMeta}>Type: {doc.type} | Size: {doc.size} KB</Text>
+              <Text style={styles.docMeta}>Uploaded: {new Date(doc.create_date).toLocaleString()}</Text>
+            </View>
           </View>
         );
       })}
@@ -102,17 +104,22 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   documentCard: {
+    flexDirection: 'row',
     marginBottom: 16,
-    padding: 16,
+    padding: 12,
     borderRadius: 8,
     backgroundColor: '#F5F5F5',
+    alignItems: 'center',
   },
   thumbnail: {
-    width: '100%',
-    height: 160,
-    marginBottom: 12,
-    borderRadius: 8,
+    width: 80,
+    height: 100,
+    borderRadius: 6,
     backgroundColor: '#E0E0E0',
+    marginRight: 12,
+  },
+  documentInfo: {
+    flex: 1,
   },
   docTitle: {
     fontSize: 16,
