@@ -76,6 +76,7 @@ export async function getDocumentsByDatasetId({
       ...(documentId && { id: documentId }),
     });
 
+    console.log(datasetId);
     const response = await fetch(`${API_URL}/api/v1/datasets/${datasetId}/documents?${params}`, {
       headers: {
         Authorization: `Bearer ${API_KEY}`,
