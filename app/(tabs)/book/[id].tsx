@@ -5,6 +5,7 @@ import { Document } from '../../../types/document';
 import { ErrorMessage } from '../../../components/ErrorMessage';
 import { LoadingIndicator } from '../../../components/LoadingIndicator';
 import { getDocumentsByDatasetId } from '../../../utils/api';
+import { formatFileSize } from '../../../utils/app';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const BASE_IMAGE_URL = `${API_URL}/v1/document/image`;
@@ -76,7 +77,9 @@ export default function BookDetailScreen() {
             )}
             <View style={styles.documentInfo}>
               <Text style={styles.docTitle}>{doc.name}</Text>
-              <Text style={styles.docMeta}>Type: {doc.type} | Size: {doc.size} KB</Text>
+              <Text style={styles.docMeta}>
+  Type: {doc.type} | Size: {formatFileSize(doc.size)}
+</Text>
               <Text style={styles.docMeta}>Uploaded: {new Date(doc.create_date).toLocaleString()}</Text>
             </View>
           </View>
