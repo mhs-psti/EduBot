@@ -48,3 +48,11 @@ export async function fetchDatasets({
     throw error;
   }
 }
+
+export async function fetchDocuments(datasetId: string) {
+  const res = await fetch(`${API_URL}/api/v1/datasets/${datasetId}/documents?page=1&page_size=20`, {
+    headers: { Authorization: `Bearer ${API_KEY}` },
+  });
+  const json = await res.json();
+  return json.data?.docs || [];
+}
