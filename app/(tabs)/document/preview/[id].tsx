@@ -13,8 +13,10 @@ import { PdfViewer } from '../../../../components/pdf-viewer/PdfViewer';
 import { LoadingIndicator } from '../../../../components/LoadingIndicator';
 import { ErrorMessage } from '../../../../components/ErrorMessage';
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+
 export default function DocumentPreviewScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, name } = useLocalSearchParams<{ id: string; name?: string }>();
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +31,7 @@ export default function DocumentPreviewScreen() {
       setError(null);
       
       // TODO: Replace with actual API call to get document URL
-      const mockUrl = 'https://example.com/document.pdf';
+      const mockUrl = `${API_URL}/document/${id}?ext=pdf&prefix=file`;
       setPdfUrl(mockUrl);
       
     } catch (err: any) {
@@ -65,7 +67,7 @@ export default function DocumentPreviewScreen() {
         >
           <ArrowLeft size={24} color="#212121" />
         </TouchableOpacity>
-        <Text style={styles.title}>Document Preview</Text>
+        <Text style={styles.title}>{name || 'Document Preview'}</Text>
       </View>
 
       <View style={styles.pdfContainer}>
