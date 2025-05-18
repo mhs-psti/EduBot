@@ -8,22 +8,21 @@ interface PdfViewerProps {
 }
 
 export const PdfViewer: React.FC<PdfViewerProps> = ({ uri, onError }) => {
-  const [base64Pdf, setBase64Pdf] = useState<string | null>(null);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadPdf = async () => {
-      try {
-        const base64 = await fetchPdfWithAuth(uri!);
-        setBase64Pdf(base64);
-      } catch (error) {
-        onError?.(error as Error);
-      }
-    };
+  const loadPdf = async () => {
+    const blobUrl = await fetchPdfBlobUrlWithAuth(uri);
+    setPdfUrl(blobUrl);
+  };
+  loadPdf();
 
-    if (uri) loadPdf();
-  }, [uri]);
+    return () => {
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+  };
+}, [uri]);
 
-  if (!base64Pdf) {
+  if (!pdfUrl) {
     return (
       <View style={styles.container}>
         <Text>Loading PDF...</Text>
@@ -33,7 +32,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ uri, onError }) => {
 
   return (
     <iframe
-      src={`${base64Pdf}#toolbar=0&navpanes=0&scrollbar=0`}
+      src={`${pdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
       style={styles.iframe as any}
       title="PDF Preview"
     />
