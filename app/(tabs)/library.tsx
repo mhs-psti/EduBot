@@ -24,7 +24,6 @@ export default function LibraryScreen() {
         const response = await fetchDatasets();
 if (Array.isArray(response?.data)) {
   setBooks(response.data);
-  console.log(bo)
 } else {
   console.warn("API response is not an array", response);
   setBooks([]); // prevent crash
