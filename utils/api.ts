@@ -30,7 +30,7 @@ export async function fetchPdfWithAuth(pdfUrl: string): Promise<string> {
   });
 
   const blob = await response.blob();
-  return await blobToBase64(blob);
+  return URL.createObjectURL(blob);
 }
 
 function blobToBase64(blob: Blob): Promise<string> {
