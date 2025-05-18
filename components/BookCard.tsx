@@ -20,7 +20,7 @@ const cardWidth = width < 500 ? (width - 40) / 2 : (width - 60) / 3;
 
 export const BookCard: React.FC<BookCardProps> = ({ book }) => {
   const handlePress = () => {
-    router.push({
+    router.navigate({
       pathname: `/(tabs)/book/[id]`,
       params: { id: book.id, name: book.name }
     });
