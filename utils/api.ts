@@ -16,14 +16,26 @@ const HEADERS = {
  * @returns string data URI (base64) untuk digunakan sebagai `Image.source.uri`
  */
 export async function fetchImageWithAuth(imageUrl: string): Promise<string> {
-  try {
-    const res = await RNFetchBlob.config({ fileCache: false }).fetch('GET', imageUrl, HEADERS);
-    const base64 = await res.base64();
-    return `data:image/jpeg;base64,${base64}`;
-  } catch (error) {
-    console.error('Failed to fetch protected image:', error);
-    throw error;
-  }
+  const response = await fetch(imageUrl, {
+    headers: {
+      Authorization: `Bearer ${process.env.EXPO_PUBLIC_API_KEY}`,
+      'ngrok-skip-browser-warning': 'true',
+    },
+  });
+
+  const blob = await response.blob();
+  return await blobToBase64(blob);
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      resolve(reader.result as string);
+    };
+    reader.readAsDataURL(blob);
+  });
 }
 
 export async function fetchDatasets({
