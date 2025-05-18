@@ -81,7 +81,7 @@ export default function HistoryScreen() {
   };
 
   const handleSessionPress = useCallback((session: ChatSession) => {
-    router.push({
+    router.navigate({
       pathname: '/(tabs)/book/[id]',
       params: { id: session.bookId, chatSessionId: session.id }
     });
