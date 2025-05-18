@@ -62,36 +62,41 @@ export default function BookDetailScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{name || 'Document List'}</Text>
       {documents.map((doc) => {
-        const imageUrl = doc.thumbnail
-          ? `${BASE_IMAGE_URL}/${id}-${doc.thumbnail}`
-          : null;
+  const imageUrl = doc.thumbnail
+    ? `${BASE_IMAGE_URL}/${id}-${doc.thumbnail}`
+    : null;
 
-        return (
-          <TouchableOpacity
-                onPress={() => router.push({
-                  pathname: `/document/preview/${doc.id}`,
-                  params: { id: doc.id, name: doc.name }
-                })}
-              >
-                <View key={doc.id} style={styles.documentCard}>
-            {imageUrl && (
-              <Image
-                source={{ uri: imageUrl }}
-                style={styles.thumbnail}
-                resizeMode="cover"
-              />
-            )}
-            <View style={styles.documentInfo}>
-              <Text style={styles.docTitle}>{doc.name}</Text>
-              <Text style={styles.docMeta}>
-  Type: {doc.type} | Size: {formatFileSize(doc.size)}
-</Text>
-              <Text style={styles.docMeta}>Uploaded: {new Date(doc.create_date).toLocaleString()}</Text>
-            </View>
-          </View>
-              </TouchableOpacity>
-        );
-      })}
+  return (
+    <TouchableOpacity
+      key={doc.id}
+      onPress={() =>
+        router.push({
+          pathname: `/document/preview/${doc.id}`,
+          params: { name: doc.name }, // only pass name here
+        })
+      }
+    >
+      <View style={styles.documentCard}>
+        {imageUrl && (
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.thumbnail}
+            resizeMode="cover"
+          />
+        )}
+        <View style={styles.documentInfo}>
+          <Text style={styles.docTitle}>{doc.name}</Text>
+          <Text style={styles.docMeta}>
+            Type: {doc.type} | Size: {formatFileSize(doc.size)}
+          </Text>
+          <Text style={styles.docMeta}>
+            Uploaded: {new Date(doc.create_date).toLocaleString()}
+          </Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+})}
     </ScrollView>
   );
 }
