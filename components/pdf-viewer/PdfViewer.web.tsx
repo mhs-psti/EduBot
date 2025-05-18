@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
-import { fetchPdfWithAuth } from '../../../utils/api';
+import { fetchPdfWithAuth } from '../../utils/api';
 
 interface PdfViewerProps {
   uri: string | null;
