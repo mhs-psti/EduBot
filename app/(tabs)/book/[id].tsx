@@ -44,29 +44,20 @@ export default function BookDetailScreen() {
   }, [id]);
 
   useEffect(() => {
-  const loadThumbnails = async () => {
-    const newThumbnails: Record<string, string> = {};
-
-    await Promise.all(
-      documents.map(async (doc) => {
-        if (doc.thumbnail) {
-          try {
-            const imageUrl = `${BASE_IMAGE_URL}/${id}-${doc.thumbnail}`;
-            const base64 = await fetchImageWithAuth(imageUrl);
-            newThumbnails[doc.id] = base64;
-          } catch (err) {
-            console.warn(`Failed to fetch image for doc ${doc.id}`, err);
-          }
-        }
-      })
-    );
-
-    setThumbnails(newThumbnails);
-  };
-
-  if (documents.length > 0) {
-    loadThumbnails();
-  }
+  documents.forEach(async (doc) => {
+    if (doc.thumbnail) {
+      try {
+        const imageUrl = `${BASE_IMAGE_URL}/${id}-${doc.thumbnail}`;
+        const base64 = await fetchImageWithAuth(imageUrl); // your custom function
+        setThumbnails((prev) => ({
+          ...prev,
+          [doc.id]: base64,
+        }));
+      } catch (err) {
+        console.warn(`Thumbnail failed for ${doc.name}`, err);
+      }
+    }
+  });
 }, [documents]);
 
   if (isLoading) {
@@ -88,38 +79,24 @@ export default function BookDetailScreen() {
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{name || 'Document List'}</Text>
-      {documents.map((doc) => {
-  return (
-    <TouchableOpacity
-      key={doc.id}
-      onPress={() =>
-        router.push({
-          pathname: `/document/preview/${doc.id}`,
-          params: { name: doc.name },
-        })
-      }
-    >
-      <View style={styles.documentCard}>
-        {thumbnails[doc.id] && (
-          <Image
-            source={{ uri: thumbnails[doc.id] }}
-            style={styles.thumbnail}
-            resizeMode="cover"
-          />
-        )}
-        <View style={styles.documentInfo}>
-          <Text style={styles.docTitle}>{doc.name}</Text>
-          <Text style={styles.docMeta}>
-            Type: {doc.type} | Size: {formatFileSize(doc.size)}
-          </Text>
-          <Text style={styles.docMeta}>
-            Uploaded: {new Date(doc.create_date).toLocaleString()}
-          </Text>
+      {documents.map((doc) => (
+  <TouchableOpacity key={doc.id} onPress={() => router.push({ pathname: `/document/preview/${doc.id}`, params: { name: doc.name } })}>
+    <View style={styles.documentCard}>
+      {thumbnails[doc.id] ? (
+        <Image source={{ uri: thumbnails[doc.id] }} style={styles.thumbnail} />
+      ) : (
+        <View style={[styles.thumbnail, { justifyContent: 'center', alignItems: 'center' }]}>
+          <Text style={{ fontSize: 12, color: '#999' }}>Loading...</Text>
         </View>
+      )}
+      <View style={styles.documentInfo}>
+        <Text style={styles.docTitle}>{doc.name}</Text>
+        <Text style={styles.docMeta}>Type: {doc.type} | Size: {formatFileSize(doc.size)}</Text>
+        <Text style={styles.docMeta}>Uploaded: {new Date(doc.create_date).toLocaleString()}</Text>
       </View>
-    </TouchableOpacity>
-  );
-})}
+    </View>
+  </TouchableOpacity>
+))}
     </ScrollView>
   );
 }
