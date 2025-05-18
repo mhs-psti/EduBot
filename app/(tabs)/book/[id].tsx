@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Platform, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, Platform, ScrollView, TouchableOpacity, Image, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Document } from '../../../types/document';
 import { ErrorMessage } from '../../../components/ErrorMessage';
