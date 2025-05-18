@@ -33,7 +33,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ uri, onError }) => {
 
   return (
     <iframe
-      src={base64Pdf}
+      src={`${base64Pdf}#toolbar=0&navpanes=0&scrollbar=0`}
       style={styles.iframe as any}
       title="PDF Preview"
     />
