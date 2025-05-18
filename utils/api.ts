@@ -26,6 +26,7 @@ export async function fetchDatasets({
       ...(id && { id }),
     });
 
+    console.log("API_URL", API_URL);
     const response = await fetch(`${API_URL}/api/v1/datasets?${params}`, {
       headers: {
         Authorization: `Bearer ${API_KEY}`,
