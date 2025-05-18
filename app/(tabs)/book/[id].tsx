@@ -4,7 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { Document } from '../../../types/document';
 import { ErrorMessage } from '../../../components/ErrorMessage';
 import { LoadingIndicator } from '../../../components/LoadingIndicator';
-import { getDocumentsByDatasetId } from '../../../utils/api';
+import { getDocumentsByDatasetId, fetchImageWithAuth } from '../../../utils/api';
 import { formatFileSize } from '../../../utils/app';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -15,6 +15,7 @@ export default function BookDetailScreen() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const loadDocuments = async () => {
@@ -42,6 +43,32 @@ export default function BookDetailScreen() {
     }
   }, [id]);
 
+  useEffect(() => {
+  const loadThumbnails = async () => {
+    const newThumbnails: Record<string, string> = {};
+
+    await Promise.all(
+      documents.map(async (doc) => {
+        if (doc.thumbnail) {
+          try {
+            const imageUrl = `${BASE_IMAGE_URL}/${id}-${doc.thumbnail}`;
+            const base64 = await fetchImageWithAuth(imageUrl);
+            newThumbnails[doc.id] = base64;
+          } catch (err) {
+            console.warn(`Failed to fetch image for doc ${doc.id}`, err);
+          }
+        }
+      })
+    );
+
+    setThumbnails(newThumbnails);
+  };
+
+  if (documents.length > 0) {
+    loadThumbnails();
+  }
+}, [documents]);
+
   if (isLoading) {
     return (
       <View style={styles.center}>
@@ -62,24 +89,20 @@ export default function BookDetailScreen() {
     <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{name || 'Document List'}</Text>
       {documents.map((doc) => {
-  const imageUrl = doc.thumbnail
-    ? `${BASE_IMAGE_URL}/${id}-${doc.thumbnail}`
-    : null;
-
   return (
     <TouchableOpacity
       key={doc.id}
       onPress={() =>
         router.push({
           pathname: `/document/preview/${doc.id}`,
-          params: { name: doc.name }, // only pass name here
+          params: { name: doc.name },
         })
       }
     >
       <View style={styles.documentCard}>
-        {imageUrl && (
+        {thumbnails[doc.id] && (
           <Image
-            source={{ uri: imageUrl }}
+            source={{ uri: thumbnails[doc.id] }}
             style={styles.thumbnail}
             resizeMode="cover"
           />
