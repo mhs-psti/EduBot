@@ -6,6 +6,7 @@ import { ErrorMessage } from '../../../components/ErrorMessage';
 import { LoadingIndicator } from '../../../components/LoadingIndicator';
 import { getDocumentsByDatasetId, fetchImageWithAuth } from '../../../utils/api';
 import { formatFileSize } from '../../../utils/app';
+import { FloatingActionButton } from '../../../components/FloatingActionButton';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const BASE_IMAGE_URL = `${API_URL}/v1/document/image`;
@@ -99,15 +100,13 @@ export default function BookDetailScreen() {
   </TouchableOpacity>
 ))}
     </ScrollView>
-      <TouchableOpacity
-  style={styles.fab}
-  onPress={() => {
+      <FloatingActionButton
+        onPress={() => {
     // Ganti dengan action yang kamu mau, contoh:
     alert('Floating Action Clicked!');
   }}
->
-  <Text style={styles.fabIcon}>+</Text>
-</TouchableOpacity>
+        title="Ask AI Assistant"
+      />
     </>
   );
 }
@@ -156,25 +155,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#757575',
   },
-  fab: {
-  position: 'absolute',
-  bottom: 24,
-  right: 24,
-  backgroundColor: '#3F51B5',
-  width: 56,
-  height: 56,
-  borderRadius: 28,
-  justifyContent: 'center',
-  alignItems: 'center',
-  shadowColor: '#000',
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.3,
-  shadowRadius: 3,
-  elevation: 5,
-},
-fabIcon: {
-  color: 'white',
-  fontSize: 28,
-  fontWeight: 'bold',
-},
 });
