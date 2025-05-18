@@ -1,6 +1,31 @@
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
 
+// utils/api.ts
+import RNFetchBlob from 'react-native-blob-util';
+
+const HEADERS = {
+  Authorization: `Bearer ${API_KEY}`,
+  'ngrok-skip-browser-warning': 'true',
+  'User-Agent': 'ExpoApp/1.0',
+};
+
+/**
+ * Mengambil gambar dari URL dengan header otentikasi dan mengembalikannya dalam format base64
+ * @param imageUrl URL gambar yang ingin diambil
+ * @returns string data URI (base64) untuk digunakan sebagai `Image.source.uri`
+ */
+export async function fetchImageWithAuth(imageUrl: string): Promise<string> {
+  try {
+    const res = await RNFetchBlob.config({ fileCache: false }).fetch('GET', imageUrl, HEADERS);
+    const base64 = await res.base64();
+    return `data:image/jpeg;base64,${base64}`;
+  } catch (error) {
+    console.error('Failed to fetch protected image:', error);
+    throw error;
+  }
+}
+
 export async function fetchDatasets({
   page = 1,
   pageSize = 20,
@@ -27,12 +52,7 @@ export async function fetchDatasets({
     });
 
     const response = await fetch(`${API_URL}/api/v1/datasets?${params}`, {
-      headers: {
-        Authorization: `Bearer ${API_KEY}`,
-        // 🛡 Skip ngrok warning page
-        'ngrok-skip-browser-warning': 'true',
-        'User-Agent': 'ExpoApp/1.0', // Optional additional bypass
-      },
+      headers: HEADERS,
     });
 
     if (!response.ok) {
@@ -84,12 +104,7 @@ export async function getDocumentsByDatasetId({
 }
     
     const response = await fetch(`${API_URL}/api/v1/datasets/${datasetId}/documents?${params}`, {
-      headers: {
-        Authorization: `Bearer ${API_KEY}`,
-        // 🛡 Skip ngrok warning page
-        'ngrok-skip-browser-warning': 'true',
-        'User-Agent': 'ExpoApp/1.0', // Optional additional bypass
-      },
+      headers: HEADERS,
     });
 
     if (!response.ok) {
