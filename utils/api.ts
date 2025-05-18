@@ -26,10 +26,12 @@ export async function fetchDatasets({
       ...(id && { id }),
     });
 
-    console.log("API_URL", API_URL);
     const response = await fetch(`${API_URL}/api/v1/datasets?${params}`, {
       headers: {
         Authorization: `Bearer ${API_KEY}`,
+        // 🛡 Skip ngrok warning page
+        'ngrok-skip-browser-warning': 'true',
+        'User-Agent': 'ExpoApp/1.0', // Optional additional bypass
       },
     });
 
@@ -84,6 +86,9 @@ export async function getDocumentsByDatasetId({
     const response = await fetch(`${API_URL}/api/v1/datasets/${datasetId}/documents?${params}`, {
       headers: {
         Authorization: `Bearer ${API_KEY}`,
+        // 🛡 Skip ngrok warning page
+        'ngrok-skip-browser-warning': 'true',
+        'User-Agent': 'ExpoApp/1.0', // Optional additional bypass
       },
     });
 
