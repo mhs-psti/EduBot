@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, Text } from 'react-native';
 import { fetchPdfWithAuth } from '../../../utils/api';
 
 interface PdfViewerProps {
@@ -8,21 +8,33 @@ interface PdfViewerProps {
 }
 
 export const PdfViewer: React.FC<PdfViewerProps> = ({ uri, onError }) => {
-  if (!uri) {
-    return <View style={styles.container} />;
-  }
   const [base64Pdf, setBase64Pdf] = useState<string | null>(null);
+
   useEffect(() => {
-    const base64 = await fetchImageWithAuth(uri);
-    setBase64Pdf(base64);
+    const loadPdf = async () => {
+      try {
+        const base64 = await fetchPdfWithAuth(uri!);
+        setBase64Pdf(base64);
+      } catch (error) {
+        onError?.(error as Error);
+      }
+    };
+
+    if (uri) loadPdf();
   }, [uri]);
 
-  if (!base64Pdf) return <p>Loading PDF...</p>;
+  if (!base64Pdf) {
+    return (
+      <View style={styles.container}>
+        <Text>Loading PDF...</Text>
+      </View>
+    );
+  }
 
   return (
     <iframe
       src={base64Pdf}
-      style={{ width: '100%', height: '100vh', border: 'none' }}
+      style={styles.iframe as any}
       title="PDF Preview"
     />
   );
@@ -32,10 +44,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   iframe: {
     width: '100%',
-    height: '100%',
+    height: '100vh',
     border: 'none',
   },
 });
