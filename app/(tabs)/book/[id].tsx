@@ -78,9 +78,17 @@ export default function BookDetailScreen() {
   }
 
   return (
-    <>
-      <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.title}>{name || 'Document List'}</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <ArrowLeft size={24} color="#212121" />
+        </TouchableOpacity>
+        <Text style={styles.title}>{name || 'Document List'}</Text>
+      </View>
+      <ScrollView contentContainerStyle={styles.listContainer}>
       {documents.map((doc) => (
   <TouchableOpacity key={doc.id} onPress={() => router.push({ pathname: `/document/preview/${doc.id}`, params: { name: doc.name } })}>
     <View style={styles.documentCard}>
@@ -107,13 +115,33 @@ export default function BookDetailScreen() {
   }}
         title="Ask AI Assistant"
       />
-    </>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  backButton: {
+    marginRight: 16,
+  },
+  title: {
+    fontSize: 20,
+    fontFamily: 'Inter-SemiBold',
+    color: '#212121',
+  },
+  listContainer: {
+    flex: 1,
     backgroundColor: '#FFFFFF',
   },
   center: {
