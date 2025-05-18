@@ -91,7 +91,7 @@ export default function BookDetailScreen() {
       </View>
       <ScrollView contentContainerStyle={styles.listContainer}>
       {documents.map((doc) => (
-  <TouchableOpacity key={doc.id} onPress={() => router.push({ pathname: `/document/preview/${doc.id}`, params: { name: doc.name } })}>
+  <TouchableOpacity key={doc.id} onPress={() => router.navigate({ pathname: `/document/preview/${doc.id}`, params: { name: doc.name } })}>
     <View style={styles.documentCard}>
       {thumbnails[doc.id] ? (
         <Image source={{ uri: thumbnails[doc.id] }} style={styles.thumbnail} />
