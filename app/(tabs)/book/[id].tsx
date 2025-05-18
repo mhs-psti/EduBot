@@ -136,11 +136,6 @@ const styles = StyleSheet.create({
   backButton: {
     marginRight: 16,
   },
-  title: {
-    fontSize: 20,
-    fontFamily: 'Inter-SemiBold',
-    color: '#212121',
-  },
   listContainer: {
     flex: 1,
     backgroundColor: '#FFFFFF',
@@ -155,7 +150,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: 'Inter-Bold',
     color: '#212121',
-    marginBottom: 16,
   },
   documentCard: {
     flexDirection: 'row',
