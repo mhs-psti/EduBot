@@ -17,10 +17,16 @@ const HEADERS = {
  */
 export async function fetchImageWithAuth(imageUrl: string): Promise<string> {
   const response = await fetch(imageUrl, {
-    headers: {
-      Authorization: `Bearer ${process.env.EXPO_PUBLIC_API_KEY}`,
-      'ngrok-skip-browser-warning': 'true',
-    },
+    headers: HEADERS,
+  });
+
+  const blob = await response.blob();
+  return await blobToBase64(blob);
+}
+
+export async function fetchPdfWithAuth(pdfUrl: string): Promise<string> {
+  const response = await fetch(pdfUrl, {
+    headers: HEADERS,
   });
 
   const blob = await response.blob();
