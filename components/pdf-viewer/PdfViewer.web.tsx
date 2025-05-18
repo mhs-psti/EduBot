@@ -12,7 +12,7 @@ export const PdfViewer: React.FC<PdfViewerProps> = ({ uri, onError }) => {
 
   useEffect(() => {
   const loadPdf = async () => {
-    const blobUrl = await fetchPdfBlobUrlWithAuth(uri);
+    const blobUrl = await fetchPdfWithAuth(uri);
     setPdfUrl(blobUrl);
   };
   loadPdf();
