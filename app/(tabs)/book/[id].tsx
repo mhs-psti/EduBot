@@ -8,6 +8,7 @@ import { LoadingIndicator } from '../../../components/LoadingIndicator';
 import { getDocumentsByDatasetId, fetchImageWithAuth } from '../../../utils/api';
 import { formatFileSize } from '../../../utils/app';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
+import { ChatInterface } from '../../../components/ChatInterface';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const BASE_IMAGE_URL = `${API_URL}/v1/document/image`;
@@ -18,6 +19,7 @@ export default function BookDetailScreen() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
+  const [isChatVisible, setIsChatVisible] = useState(false);
 
   useEffect(() => {
     const loadDocuments = async () => {
@@ -46,21 +48,26 @@ export default function BookDetailScreen() {
   }, [id]);
 
   useEffect(() => {
-  documents.forEach(async (doc) => {
-    if (doc.thumbnail) {
-      try {
-        const imageUrl = `${BASE_IMAGE_URL}/${id}-${doc.thumbnail}`;
-        const base64 = await fetchImageWithAuth(imageUrl); // your custom function
-        setThumbnails((prev) => ({
-          ...prev,
-          [doc.id]: base64,
-        }));
-      } catch (err) {
-        console.warn(`Thumbnail failed for ${doc.name}`, err);
+    documents.forEach(async (doc) => {
+      if (doc.thumbnail) {
+        try {
+          const imageUrl = `${BASE_IMAGE_URL}/${id}-${doc.thumbnail}`;
+          const base64 = await fetchImageWithAuth(imageUrl);
+          setThumbnails((prev) => ({
+            ...prev,
+            [doc.id]: base64,
+          }));
+        } catch (err) {
+          console.warn(`Thumbnail failed for ${doc.name}`, err);
+        }
       }
-    }
-  });
-}, [documents]);
+    });
+  }, [documents]);
+
+  const handleSendMessage = (message: string) => {
+    // Implement your message sending logic here
+    console.log('Sending message:', message);
+  };
 
   if (isLoading) {
     return (
@@ -90,31 +97,47 @@ export default function BookDetailScreen() {
         <Text style={styles.title}>{name || 'Document List'}</Text>
       </View>
       <ScrollView contentContainerStyle={styles.listContainer}>
-      {documents.map((doc) => (
-  <TouchableOpacity key={doc.id} onPress={() => router.navigate({ pathname: `/document/preview/${doc.id}`, params: { name: doc.name } })}>
-    <View style={styles.documentCard}>
-      {thumbnails[doc.id] ? (
-        <Image source={{ uri: thumbnails[doc.id] }} style={styles.thumbnail} />
-      ) : (
-        <View style={[styles.thumbnail, { justifyContent: 'center', alignItems: 'center' }]}>
-          <Text style={{ fontSize: 12, color: '#999' }}>Loading...</Text>
-        </View>
-      )}
-      <View style={styles.documentInfo}>
-        <Text style={styles.docTitle}>{doc.name}</Text>
-        <Text style={styles.docMeta}>Type: {doc.type} | Size: {formatFileSize(doc.size)}</Text>
-        <Text style={styles.docMeta}>Uploaded: {new Date(doc.create_date).toLocaleString()}</Text>
-      </View>
-    </View>
-  </TouchableOpacity>
-))}
-    </ScrollView>
+        {documents.map((doc) => (
+          <TouchableOpacity
+            key={doc.id}
+            onPress={() =>
+              router.navigate({
+                pathname: `/document/preview/${doc.id}`,
+                params: { name: doc.name },
+              })
+            }
+          >
+            <View style={styles.documentCard}>
+              {thumbnails[doc.id] ? (
+                <Image source={{ uri: thumbnails[doc.id] }} style={styles.thumbnail} />
+              ) : (
+                <View style={[styles.thumbnail, { justifyContent: 'center', alignItems: 'center' }]}>
+                  <Text style={{ fontSize: 12, color: '#999' }}>Loading...</Text>
+                </View>
+              )}
+              <View style={styles.documentInfo}>
+                <Text style={styles.docTitle}>{doc.name}</Text>
+                <Text style={styles.docMeta}>
+                  Type: {doc.type} | Size: {formatFileSize(doc.size)}
+                </Text>
+                <Text style={styles.docMeta}>
+                  Uploaded: {new Date(doc.create_date).toLocaleString()}
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
+
       <FloatingActionButton
-        onPress={() => {
-    // Ganti dengan action yang kamu mau, contoh:
-    alert('Floating Action Clicked!');
-  }}
+        onPress={() => setIsChatVisible(true)}
         title="Ask AI Assistant"
+      />
+
+      <ChatInterface
+        visible={isChatVisible}
+        onClose={() => setIsChatVisible(false)}
+        onSendMessage={handleSendMessage}
       />
     </SafeAreaView>
   );
@@ -137,7 +160,7 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   listContainer: {
-    flex: 1,
+    padding: 16,
     backgroundColor: '#FFFFFF',
   },
   center: {
