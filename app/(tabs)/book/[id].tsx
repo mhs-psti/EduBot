@@ -77,7 +77,8 @@ export default function BookDetailScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <>
+      <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.title}>{name || 'Document List'}</Text>
       {documents.map((doc) => (
   <TouchableOpacity key={doc.id} onPress={() => router.push({ pathname: `/document/preview/${doc.id}`, params: { name: doc.name } })}>
@@ -98,6 +99,16 @@ export default function BookDetailScreen() {
   </TouchableOpacity>
 ))}
     </ScrollView>
+      <TouchableOpacity
+  style={styles.fab}
+  onPress={() => {
+    // Ganti dengan action yang kamu mau, contoh:
+    alert('Floating Action Clicked!');
+  }}
+>
+  <Text style={styles.fabIcon}>+</Text>
+</TouchableOpacity>
+    </>
   );
 }
 
@@ -145,4 +156,25 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#757575',
   },
+  fab: {
+  position: 'absolute',
+  bottom: 24,
+  right: 24,
+  backgroundColor: '#3F51B5',
+  width: 56,
+  height: 56,
+  borderRadius: 28,
+  justifyContent: 'center',
+  alignItems: 'center',
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.3,
+  shadowRadius: 3,
+  elevation: 5,
+},
+fabIcon: {
+  color: 'white',
+  fontSize: 28,
+  fontWeight: 'bold',
+},
 });
