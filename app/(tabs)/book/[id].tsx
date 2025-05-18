@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Platform, ScrollView, TouchableOpacity, Image, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
+import { ArrowLeft } from 'lucide-react-native';
 import { Document } from '../../../types/document';
 import { ErrorMessage } from '../../../components/ErrorMessage';
 import { LoadingIndicator } from '../../../components/LoadingIndicator';
