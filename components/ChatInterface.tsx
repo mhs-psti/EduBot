@@ -96,7 +96,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         isUser: true,
         timestamp: new Date(),
       };
-      onMessagesUpdate((prev) => [...prev, newMessage]);
       onSendMessage(message);
       setMessage('');
       scrollViewRef.current?.scrollToEnd({ animated: true });
