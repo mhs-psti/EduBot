@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
 
 export const ReferenceTooltip = ({ chunk }: { chunk: any }) => {
