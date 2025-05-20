@@ -134,11 +134,13 @@ export default function BookDetailScreen() {
         title="Ask AI Assistant"
       />
 
+      {/* Chat Interface */}
       <ChatInterface
-        visible={isChatVisible}
-        onClose={() => setIsChatVisible(false)}
-        onSendMessage={handleSendMessage}
-      />
+  visible={isChatVisible}
+  onClose={() => setIsChatVisible(false)}
+  onSendMessage={handleSendMessage}
+  title={`${name} Assistant`}
+/>
     </SafeAreaView>
   );
 }
