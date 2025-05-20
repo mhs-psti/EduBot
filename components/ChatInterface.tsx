@@ -55,37 +55,41 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [visible]);
 
   useEffect(() => {
+  const initializeChat = async () => {
     if (visible) {
       if (sessionId) {
         // TODO: fetch message by session ID
         console.log('Fetching messages for session:', sessionId);
       } else {
-        fetchInitialMessage({ name: title })
-          .then((res) => {
-            // Create session after initial message
-              try {
-                const sessionRes = await createChatSession(res.data[0].id, 'new session');
-                console.log('New session created:', sessionRes);
+        try {
+          const res = await fetchInitialMessage({ name: title });
 
-if (sessionRes?.data?.messages[0]?.content) {
-              onMessagesUpdate([
-                {
-                  id: Date.now().toString(),
-                  text: sessionRes?.data?.messages[0]?.content,
-                  isUser: false,
-                  timestamp: new Date(),
-                },
-              ]);
-            }
-                
-              } catch (e) {
-                console.error('Failed to create chat session:', e);
-              }
-          })
-          .catch((err) => console.error('Failed to fetch initial message:', err));
+          // Create session after initial message
+          const sessionRes = await createChatSession(res.data[0].id, 'new session');
+          console.log('New session created:', sessionRes);
+
+          if (sessionRes?.messages?.[0]?.content) {
+            onMessagesUpdate([
+              {
+                id: Date.now().toString(),
+                text: sessionRes.messages[0].content,
+                isUser: false,
+                timestamp: new Date(),
+              },
+            ]);
+          }
+
+          // Optional: jika ingin mengatur sessionId ke parent, tambahkan callback
+          // onSessionCreated(sessionRes.id);
+        } catch (e) {
+          console.error('Failed to fetch message or create session:', e);
+        }
       }
     }
-  }, [visible, title, sessionId]);
+  };
+
+  initializeChat();
+}, [visible, title, sessionId]);
 
   useEffect(() => {
     if (!visible) {
