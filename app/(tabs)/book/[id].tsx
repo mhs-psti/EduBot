@@ -89,6 +89,7 @@ export default function BookDetailScreen() {
         text: data.answer,
         isUser: false,
         timestamp: new Date(),
+        references: data.reference?.chunks || []
       };
 
       setMessages((prev) => [...prev, aiMsg]);
