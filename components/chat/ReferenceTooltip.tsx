@@ -70,6 +70,7 @@ const styles = StyleSheet.create({
   },
   closeBtn: {
     marginTop: 12,
+    fontFamily: 'Inter-Regular',
     color: '#3F51B5',
     fontWeight: '600',
     textAlign: 'right',
