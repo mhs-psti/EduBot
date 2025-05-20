@@ -191,13 +191,11 @@ export async function fetchInitialMessage({
 export async function sendChatMessage({
   chatId,
   question,
-  sessionId,
-  userId
+  sessionId
 }: {
   chatId: string;
   question: string;
   sessionId?: string;
-  userId?: string;
 }) {
   const response = await fetch(`${API_URL}/api/v1/chats/${chatId}/completions`, {
     method: 'POST',
@@ -209,7 +207,7 @@ export async function sendChatMessage({
       question,
       stream: false,
       ...(sessionId ? { session_id: sessionId } : {}),
-      ...(userId ? { user_id: userId } : {}),
+      user_id: "9d16d91b-e8ed-478f-90bf-6d82560032e8",
     }),
   });
 
@@ -233,7 +231,10 @@ export async function createChatSession(chatId: string, name: string) {
       ...HEADERS,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ name }),
+    body: JSON.stringify({
+      name,
+      user_id: "9d16d91b-e8ed-478f-90bf-6d82560032e8"
+    }),
   });
 
   const result = await response.json();
