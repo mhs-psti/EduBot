@@ -141,3 +141,49 @@ export async function getDocumentsByDatasetId({
     throw error;
   }
 }
+
+export async function fetchInitialMessage({
+  page = 1,
+  pageSize = 20,
+  orderBy = 'create_time',
+  desc = true,
+  name, // now required
+  id,
+}: {
+  page?: number;
+  pageSize?: number;
+  orderBy?: string;
+  desc?: boolean;
+  name: string; // ← required now
+  id?: string;
+}) {
+  try {
+    const params = new URLSearchParams({
+      page: page.toString(),
+      page_size: pageSize.toString(),
+      orderby: orderBy,
+      desc: desc.toString(),
+      name, // ← always included
+      ...(id && { id }),
+    });
+
+    const response = await fetch(`${API_URL}/api/v1/chats?${params}`, {
+      headers: HEADERS,
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (data.code === 102) {
+      return { code: data.code, data: [] };
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error fetching chats:', error);
+    throw error;
+  }
+}
