@@ -201,7 +201,10 @@ export async function sendChatMessage({
 }) {
   const response = await fetch(`${API_URL}/api/v1/chats/${chatId}/completions`, {
     method: 'POST',
-    headers: HEADERS,
+    headers: {
+      ...HEADERS,
+      'Content-Type': 'application/json',
+    },
     body: JSON.stringify({
       question,
       stream: false,
@@ -221,4 +224,23 @@ export async function sendChatMessage({
   }
 
   throw new Error(result.message || 'Failed to get chat response');
+}
+
+export async function createChatSession(chatId: string, name: string) {
+  const response = await fetch(`${API_URL}/api/v1/chats/${chatId}/sessions`, {
+    method: 'POST',
+    headers: {
+      ...HEADERS,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ name }),
+  });
+
+  const result = await response.json();
+
+  if (result.code === 0 && result.data) {
+    return result.data;
+  } else {
+    throw new Error(result.message || 'Failed to create chat session');
+  }
 }
