@@ -5,7 +5,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { Document } from '../../../types/document';
 import { ErrorMessage } from '../../../components/ErrorMessage';
 import { LoadingIndicator } from '../../../components/LoadingIndicator';
-import { getDocumentsByDatasetId, fetchImageWithAuth } from '../../../utils/api';
+import { getDocumentsByDatasetId, fetchImageWithAuth, sendChatMessage } from '../../../utils/api';
 import { formatFileSize } from '../../../utils/app';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import { ChatInterface } from '../../../components/ChatInterface';
@@ -20,6 +20,9 @@ export default function BookDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   const [isChatVisible, setIsChatVisible] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
+  const [chatId] = useState('cf90a7b4334611f080d1ea5f1b3df08c');
 
   useEffect(() => {
     const loadDocuments = async () => {
@@ -64,31 +67,39 @@ export default function BookDetailScreen() {
     });
   }, [documents]);
 
-  const handleSendMessage = async (message: string, sessionId?: string) => {
-  try {
-    const data = await sendChatMessage({
-      chatId: 'cf90a7b4334611f080d1ea5f1b3df08c', // ganti sesuai ID chat yang digunakan
-      question: message,
-      sessionId,
-    });
+  const handleSendMessage = async (userMessage: string) => {
+    const userMsg = {
+      id: Date.now().toString(),
+      text: userMessage,
+      isUser: true,
+      timestamp: new Date(),
+    };
 
-    setMessages((prev) => [
-      ...prev,
-      {
+    setMessages((prev) => [...prev, userMsg]);
+
+    try {
+      const data = await sendChatMessage({
+        chatId,
+        question: userMessage,
+        sessionId,
+      });
+
+      const aiMsg = {
         id: Date.now().toString(),
         text: data.answer,
         isUser: false,
         timestamp: new Date(),
-      },
-    ]);
+      };
 
-    if (!sessionId && data.session_id) {
-      setSessionId(data.session_id); // handle state session ID jika perlu
+      setMessages((prev) => [...prev, aiMsg]);
+
+      if (!sessionId && data.session_id) {
+        setSessionId(data.session_id);
+      }
+    } catch (error) {
+      console.error('Send failed:', error);
     }
-  } catch (err) {
-    console.error(err);
-  }
-};
+  };
 
   if (isLoading) {
     return (
@@ -161,6 +172,7 @@ export default function BookDetailScreen() {
   onClose={() => setIsChatVisible(false)}
   onSendMessage={handleSendMessage}
   title={`${name} Assistant`}
+        messages={messages}
 />
     </SafeAreaView>
   );
