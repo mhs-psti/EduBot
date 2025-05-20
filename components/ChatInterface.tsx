@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { Send, X } from 'lucide-react-native';
 import { fetchInitialMessage, createChatSession } from '../utils/api';
+import { AnswerWithReferences } from './chat/AnswerWithReferences';
 
 interface Message {
   id: string;
