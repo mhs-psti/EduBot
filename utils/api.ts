@@ -212,16 +212,11 @@ export async function sendChatMessage({
   });
 
   const result = await response.json();
-
-  if (result.code === 0 && typeof result.data === 'string') {
-    // Parse inner JSON string (note: might need to strip "data:" prefix)
-    const cleaned = result.data.replace(/^data:/, '');
-    const parsed = JSON.parse(cleaned);
-
-    return parsed.data; // { answer, session_id, etc. }
+  if (result.code === 0 && result.data?.answer) {
+    return result.data;
+  } else {
+    throw new Error(result.message || 'Failed to get chat response');
   }
-
-  throw new Error(result.message || 'Failed to get chat response');
 }
 
 export async function createChatSession(chatId: string, name: string) {
