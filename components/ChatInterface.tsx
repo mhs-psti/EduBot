@@ -40,7 +40,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   messages,
 }) => {
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
   const slideAnim = useRef(new Animated.Value(visible ? 0 : 1000)).current;
 
