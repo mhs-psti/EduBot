@@ -201,10 +201,7 @@ export async function sendChatMessage({
 }) {
   const response = await fetch(`${API_URL}/api/v1/chats/${chatId}/completions`, {
     method: 'POST',
-    headers: {
-      'Authorization': 'Bearer YOUR_API_KEY',
-      'Content-Type': 'application/json',
-    },
+    headers: HEADERS,
     body: JSON.stringify({
       question,
       stream: false,
