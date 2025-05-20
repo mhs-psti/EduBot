@@ -9,25 +9,27 @@ export const AnswerWithReferences = ({
   answer: string;
   references: any[];
 }) => {
-  const parts = answer.split(/(##\d+\$\$)/g);
+  const parts = .split(/(##\d+\$\$)/g);
 
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-      {parts.map((part, index) => {
-        const match = part.match(/##(\d+)\$\$/);
-        if (match) {
-          const refIndex = parseInt(match[1]);
-          const chunk = references[refIndex];
-          if (chunk) return <ReferenceTooltip key={index} chunk={chunk} />;
-          return null;
-        } else {
+  <Text style={{ fontSize: 16, color: '#212121', flexWrap: 'wrap' }}>
+    {parts.map((part, index) => {
+      const match = part.match(/##(\d+)\$\$/);
+      if (match) {
+        const refIndex = parseInt(match[1]);
+        const chunk = references[refIndex];
+        if (chunk) {
           return (
-            <Text key={index} style={{ fontSize: 16, color: '#212121' }}>
-              {part}
+            <Text key={index}>
+              <ReferenceTooltip chunk={chunk} />
             </Text>
           );
         }
-      })}
-    </View>
-  );
+        return null;
+      } else {
+        return <Text key={index}>{part}</Text>;
+      }
+    })}
+  </Text>
+);
 };
