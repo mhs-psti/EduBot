@@ -187,3 +187,36 @@ export async function fetchInitialMessage({
     throw error;
   }
 }
+
+export async function sendChatMessage({
+  chatId,
+  question,
+  sessionId,
+  userId
+}: {
+  chatId: string;
+  question: string;
+  sessionId?: string;
+  userId?: string;
+}) {
+  const response = await fetch(`${API_URL}/api/v1/chats/${chatId}/completions`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer YOUR_API_KEY',
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      question,
+      stream: false,
+      ...(sessionId ? { session_id: sessionId } : {}),
+      ...(userId ? { user_id: userId } : {}),
+    }),
+  });
+
+  const result = await response.json();
+  if (result.code === 0 && result.data?.answer) {
+    return result.data;
+  } else {
+    throw new Error(result.message || 'Failed to get chat response');
+  }
+}
