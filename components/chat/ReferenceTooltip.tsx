@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
 
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const BASE_IMAGE_URL = `${API_URL}/v1/document/image`;
+
 export const ReferenceTooltip = ({ chunk }: { chunk: any }) => {
   const [visible, setVisible] = useState(false);
   const [imageUri, setImageUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (visible && chunk.image_id) {
-      const imageUrl = `${API_URL}/v1/document/image/${chunk.image_id}`;
+      const imageUrl = `${BASE_IMAGE_URL}/${chunk.image_id}`;
       fetchImageWithAuth(imageUrl)
         .then((base64) => setImageUri(`data:image/png;base64,${base64}`))
         .catch(console.error);
