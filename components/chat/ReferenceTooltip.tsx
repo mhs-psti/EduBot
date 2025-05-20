@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Text, TouchableOpacity, View, StyleSheet } from 'react-native';
+import { Modal, Text, TouchableOpacity, View, Image, StyleSheet } from 'react-native';
 import { fetchImageWithAuth } from '../../utils/api';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
