@@ -13,7 +13,7 @@ export const ReferenceTooltip = ({ chunk }: { chunk: any }) => {
     if (visible && chunk.image_id) {
       const imageUrl = `${BASE_IMAGE_URL}/${chunk.image_id}`;
       fetchImageWithAuth(imageUrl)
-        .then((base64) => setImageUri(`data:image/png;base64,${base64}`))
+        .then((base64) => setImageUri(base64))
         .catch(console.error);
     }
   }, [visible, chunk.image_id]);
