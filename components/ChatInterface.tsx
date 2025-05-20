@@ -27,6 +27,7 @@ interface ChatInterfaceProps {
   title: string;
   subtitle?: string;
   sessionId?: string;
+  messages: Message[];
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
