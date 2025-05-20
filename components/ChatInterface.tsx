@@ -152,12 +152,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 msg.isUser ? styles.userMessage : styles.botMessage,
               ]}
             >
-              <Text style={[
-                styles.messageText,
-                msg.isUser && styles.userMessageText
-              ]}>
-                {msg.text}
-              </Text>
+              {!msg.isUser ? (
+  <AnswerWithReferences answer={msg.text} references={msg.references || []} />
+) : (
+  <Text style={[styles.messageText, styles.userMessageText]}>{msg.text}</Text>
+)}
               <Text style={styles.timestamp}>
                 {formatTime(msg.timestamp)}
               </Text>
