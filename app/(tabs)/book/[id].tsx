@@ -171,6 +171,7 @@ export default function BookDetailScreen() {
   visible={isChatVisible}
   onClose={() => setIsChatVisible(false)}
   onSendMessage={handleSendMessage}
+        onSessionCreated={setSessionId}
         onMessagesUpdate={setMessages}
   title={`${name} Assistant`}
         messages={messages}
