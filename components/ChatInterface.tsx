@@ -44,6 +44,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [message, setMessage] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
   const slideAnim = useRef(new Animated.Value(visible ? 0 : 1000)).current;
+  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     Animated.spring(slideAnim, {
@@ -77,10 +78,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 timestamp: new Date(),
               },
             ]);
+            setSessionId(sessionRes?.id);
           }
-
-          // Optional: jika ingin mengatur sessionId ke parent, tambahkan callback
-          // onSessionCreated(sessionRes.id);
         } catch (e) {
           console.error('Failed to fetch message or create session:', e);
         }
