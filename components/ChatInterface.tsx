@@ -90,12 +90,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleSend = () => {
     if (message.trim()) {
-      const newMessage: Message = {
-        id: Date.now().toString(),
-        text: message,
-        isUser: true,
-        timestamp: new Date(),
-      };
       onSendMessage(message);
       setMessage('');
       scrollViewRef.current?.scrollToEnd({ animated: true });
