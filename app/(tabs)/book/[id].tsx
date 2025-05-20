@@ -64,10 +64,31 @@ export default function BookDetailScreen() {
     });
   }, [documents]);
 
-  const handleSendMessage = (message: string) => {
-    // Implement your message sending logic here
-    console.log('Sending message:', message);
-  };
+  const handleSendMessage = async (message: string, sessionId?: string) => {
+  try {
+    const data = await sendChatMessage({
+      chatId: 'cf90a7b4334611f080d1ea5f1b3df08c', // ganti sesuai ID chat yang digunakan
+      question: message,
+      sessionId,
+    });
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: Date.now().toString(),
+        text: data.answer,
+        isUser: false,
+        timestamp: new Date(),
+      },
+    ]);
+
+    if (!sessionId && data.session_id) {
+      setSessionId(data.session_id); // handle state session ID jika perlu
+    }
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   if (isLoading) {
     return (
