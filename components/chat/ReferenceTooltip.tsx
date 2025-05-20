@@ -6,22 +6,19 @@ export const ReferenceTooltip = ({ chunk }: { chunk: any }) => {
 
   return (
     <>
-      <TouchableOpacity onPress={() => setVisible(true)}>
-        <Text style={styles.infoIcon}> ℹ️ </Text>
-      </TouchableOpacity>
-
-      <Modal visible={visible} transparent animationType="fade">
-        <View style={styles.overlay}>
-          <View style={styles.popup}>
-            <Text style={styles.docName}>{chunk.document_name}</Text>
-            <Text>{chunk.content}</Text>
-            <TouchableOpacity onPress={() => setVisible(false)}>
-              <Text style={styles.closeBtn}>Tutup</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-    </>
+  <Text onPress={() => setVisible(true)} style={styles.infoIcon}> ℹ️ </Text>
+  <Modal visible={visible} transparent animationType="fade">
+    <View style={styles.overlay}>
+      <View style={styles.popup}>
+        <Text style={styles.docName}>{chunk.document_name}</Text>
+        <Text>{chunk.content}</Text>
+        <TouchableOpacity onPress={() => setVisible(false)}>
+          <Text style={styles.closeBtn}>Tutup</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </Modal>
+</>
   );
 };
 
