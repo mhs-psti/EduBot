@@ -11,6 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import { Send, X } from 'lucide-react-native';
+import { fetchInitialMessage } from '../utils/api';
 
 interface Message {
   id: string;
@@ -23,23 +24,21 @@ interface ChatInterfaceProps {
   visible: boolean;
   onClose: () => void;
   onSendMessage: (message: string) => void;
+  title: string;
+  subtitle?: string;
+  sessionId?: string;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   visible,
   onClose,
   onSendMessage,
+  title,
+  subtitle,
+  sessionId,
 }) => {
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Hello! I\'m your AI assistant. How can I help you understand this document better?',
-      isUser: false,
-      timestamp: new Date(),
-    }
-  ]);
-
+  const [messages, setMessages] = useState<Message[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
   const slideAnim = useRef(new Animated.Value(visible ? 0 : 1000)).current;
 
@@ -52,6 +51,36 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }).start();
   }, [visible]);
 
+  useEffect(() => {
+    if (visible) {
+      if (sessionId) {
+        // TODO: fetch message by session ID
+        console.log('Fetching messages for session:', sessionId);
+      } else {
+        fetchInitialMessage({ name: title })
+          .then((res) => {
+            if (res?.data?.[0]?.prompt?.opener) {
+              setMessages([
+                {
+                  id: Date.now().toString(),
+                  text: res.data[0].prompt.opener,
+                  isUser: false,
+                  timestamp: new Date(),
+                },
+              ]);
+            }
+          })
+          .catch((err) => console.error('Failed to fetch initial message:', err));
+      }
+    }
+  }, [visible, title, sessionId]);
+
+  useEffect(() => {
+    if (!visible) {
+      setMessages([]);
+    }
+  }, [visible]);
+
   const handleSend = () => {
     if (message.trim()) {
       const newMessage: Message = {
@@ -60,7 +89,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         isUser: true,
         timestamp: new Date(),
       };
-      setMessages([...messages, newMessage]);
+      setMessages((prev) => [...prev, newMessage]);
       onSendMessage(message);
       setMessage('');
       scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -80,7 +109,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     >
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.headerTitle}>AI Assistant</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.headerTitle}>{title}</Text>
+            {subtitle ? <Text style={styles.headerSubtitle}>{subtitle}</Text> : null}
+          </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <X size={24} color="#212121" />
           </TouchableOpacity>
@@ -190,6 +222,12 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     color: '#212121',
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: '#757575',
+    marginTop: 2,
+    fontFamily: 'Inter-Regular',
   },
   closeButton: {
     padding: 8,
