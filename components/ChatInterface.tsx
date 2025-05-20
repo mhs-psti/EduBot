@@ -302,13 +302,14 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E0E0',
-    backgroundColor: '#FFFFFF',
-  },
+  flexDirection: 'row',
+  alignItems: 'flex-end',
+  justifyContent: 'space-between',
+  padding: 12,
+  borderTopWidth: 1,
+  borderTopColor: '#E0E0E0',
+  backgroundColor: '#FFFFFF',
+},
   input: {
     flex: 1,
     fontSize: 16,
@@ -327,28 +328,29 @@ const styles = StyleSheet.create({
     }),
   },
   sendButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#3F51B5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 4,
-      },
-      web: {
-        boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
-        cursor: 'pointer',
-      },
-    }),
-  },
+  width: 48,
+  height: 48,
+  borderRadius: 24,
+  backgroundColor: '#3F51B5',
+  justifyContent: 'center',
+  alignItems: 'center',
+  alignSelf: 'flex-end', // Pastikan ini ada
+  ...Platform.select({
+    ios: {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+    },
+    android: {
+      elevation: 4,
+    },
+    web: {
+      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
+      cursor: 'pointer',
+    },
+  }),
+},
   sendButtonDisabled: {
     backgroundColor: '#BDBDBD',
   },
