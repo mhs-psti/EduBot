@@ -35,6 +35,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   visible,
   onClose,
   onSendMessage,
+  onMessagesUpdate
   title,
   subtitle,
   sessionId,
