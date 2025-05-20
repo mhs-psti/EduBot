@@ -1,3 +1,4 @@
+// ChatInterface.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
@@ -14,15 +15,7 @@ import { Send, X } from 'lucide-react-native';
 import { fetchInitialMessage, createChatSession } from '../utils/api';
 import { AnswerWithReferences } from './chat/AnswerWithReferences';
 
-interface Message {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: Date;
-  references?: ReferenceChunk[];
-}
-
-interface ReferenceChunk {
+export interface ReferenceChunk {
   id: string;
   content: string;
   document_id: string;
@@ -33,6 +26,14 @@ interface ReferenceChunk {
   term_similarity?: number;
   vector_similarity?: number;
   positions?: any[];
+}
+
+export interface Message {
+  id: string;
+  text: string;
+  isUser: boolean;
+  timestamp: Date;
+  references?: ReferenceChunk[];
 }
 
 interface ChatInterfaceProps {
@@ -72,74 +73,58 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [visible]);
 
   useEffect(() => {
-  const initializeChat = async () => {
-    if (visible) {
-      if (sessionId) {
-        // TODO: fetch message by session ID
-        console.log('Fetching messages for session:', sessionId);
-      } else {
-        try {
-          const res = await fetchInitialMessage({ name: title });
+    const initializeChat = async () => {
+      if (!visible || sessionId) return;
 
-          // Create session after initial message
-          const sessionRes = await createChatSession(res.data[0].id, 'new session');
-          console.log('New session created:', sessionRes);
+      try {
+        const res = await fetchInitialMessage({ name: title });
+        const sessionRes = await createChatSession(res.data[0].id, 'new session');
 
-          if (sessionRes?.messages?.[0]?.content) {
-            onMessagesUpdate([
-              {
-                id: Date.now().toString(),
-                text: sessionRes.messages[0].content,
-                isUser: false,
-                timestamp: new Date(),
-              },
-            ]);
-            onSessionCreated(sessionRes?.id);
-          }
-        } catch (e) {
-          console.error('Failed to fetch message or create session:', e);
+        if (sessionRes?.messages?.[0]?.content) {
+          onMessagesUpdate([
+            {
+              id: Date.now().toString(),
+              text: sessionRes.messages[0].content,
+              isUser: false,
+              timestamp: new Date(),
+            },
+          ]);
+          onSessionCreated(sessionRes?.id);
         }
+      } catch (e) {
+        console.error('Failed to fetch or create session:', e);
       }
-    }
-  };
+    };
 
-  initializeChat();
-}, [visible, title, sessionId]);
+    initializeChat();
+  }, [visible, title, sessionId]);
 
   useEffect(() => {
-    if (!visible) {
-      onMessagesUpdate([]);
-    }
+    if (!visible) onMessagesUpdate([]);
   }, [visible]);
 
   useEffect(() => {
-  scrollViewRef.current?.scrollToEnd({ animated: true });
-}, [messages]);
+    scrollViewRef.current?.scrollToEnd({ animated: true });
+  }, [messages]);
 
   const handleSend = () => {
-    if (message.trim()) {
-      onSendMessage(message);
-      setMessage('');
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }
+    if (!message.trim()) return;
+
+    onSendMessage(message);
+    setMessage('');
+    scrollViewRef.current?.scrollToEnd({ animated: true });
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        { transform: [{ translateY: slideAnim }] },
-      ]}
-    >
+    <Animated.View style={[styles.container, { transform: [{ translateY: slideAnim }] }]}>      
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>{title}</Text>
-            {subtitle ? <Text style={styles.headerSubtitle}>{subtitle}</Text> : null}
+            {subtitle && <Text style={styles.headerSubtitle}>{subtitle}</Text>}
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <X size={24} color="#212121" />
@@ -156,25 +141,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         {messages.map((msg) => (
           <View
             key={msg.id}
-            style={[
-              styles.messageWrapper,
-              msg.isUser ? styles.userMessageWrapper : styles.botMessageWrapper,
-            ]}
+            style={[styles.messageWrapper, msg.isUser ? styles.userMessageWrapper : styles.botMessageWrapper]}
           >
-            <View
-              style={[
-                styles.message,
-                msg.isUser ? styles.userMessage : styles.botMessage,
-              ]}
-            >
-              {!msg.isUser ? (
-  <AnswerWithReferences answer={msg.text} references={msg.references || []} />
-) : (
-  <Text style={[styles.messageText, styles.userMessageText]}>{msg.text}</Text>
-)}
-              <Text style={styles.timestamp}>
-                {formatTime(msg.timestamp)}
-              </Text>
+            <View style={[styles.message, msg.isUser ? styles.userMessage : styles.botMessage]}>
+              {msg.isUser ? (
+                <Text style={[styles.messageText, styles.userMessageText]}>{msg.text}</Text>
+              ) : (
+                <AnswerWithReferences answer={msg.text} references={msg.references || []} />
+              )}
+              <Text style={styles.timestamp}>{formatTime(msg.timestamp)}</Text>
             </View>
           </View>
         ))}
@@ -195,10 +170,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             placeholderTextColor="#9E9E9E"
           />
           <TouchableOpacity
-            style={[
-              styles.sendButton,
-              !message.trim() && styles.sendButtonDisabled,
-            ]}
+            style={[styles.sendButton, !message.trim() && styles.sendButtonDisabled]}
             onPress={handleSend}
             disabled={!message.trim()}
           >
@@ -221,18 +193,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 24,
-      },
-      web: {
-        boxShadow: '0px -3px 6px rgba(0, 0, 0, 0.1)',
-      },
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: -3 }, shadowOpacity: 0.1, shadowRadius: 6 },
+      android: { elevation: 24 },
+      web: { boxShadow: '0px -3px 6px rgba(0, 0, 0, 0.1)' },
     }),
   },
   header: {
@@ -302,14 +265,14 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   inputContainer: {
-  flexDirection: 'row',
-  alignItems: 'flex-end',
-  justifyContent: 'space-between',
-  padding: 12,
-  borderTopWidth: 1,
-  borderTopColor: '#E0E0E0',
-  backgroundColor: '#FFFFFF',
-},
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+    padding: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    backgroundColor: '#FFFFFF',
+  },
   input: {
     flex: 1,
     fontSize: 16,
@@ -322,35 +285,23 @@ const styles = StyleSheet.create({
     maxHeight: 100,
     minHeight: 48,
     ...Platform.select({
-      web: {
-        outlineStyle: 'none',
-      },
+      web: { outlineStyle: 'none' },
     }),
   },
   sendButton: {
-  width: 48,
-  height: 48,
-  borderRadius: 24,
-  backgroundColor: '#3F51B5',
-  justifyContent: 'center',
-  alignItems: 'center',
-  alignSelf: 'flex-end', // Pastikan ini ada
-  ...Platform.select({
-    ios: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-    },
-    android: {
-      elevation: 4,
-    },
-    web: {
-      boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)',
-      cursor: 'pointer',
-    },
-  }),
-},
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#3F51B5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.2, shadowRadius: 4 },
+      android: { elevation: 4 },
+      web: { boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.2)', cursor: 'pointer' },
+    }),
+  },
   sendButtonDisabled: {
     backgroundColor: '#BDBDBD',
   },
