@@ -11,7 +11,7 @@ import {
   Animated,
 } from 'react-native';
 import { Send, X } from 'lucide-react-native';
-import { fetchInitialMessage } from '../utils/api';
+import { fetchInitialMessage, createChatSession } from '../utils/api';
 
 interface Message {
   id: string;
@@ -62,16 +62,25 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       } else {
         fetchInitialMessage({ name: title })
           .then((res) => {
-            if (res?.data?.[0]?.prompt?.opener) {
+            // Create session after initial message
+              try {
+                const sessionRes = await createChatSession(res.data[0].id, 'new session');
+                console.log('New session created:', sessionRes);
+
+if (sessionRes?.data?.messages[0]?.content) {
               onMessagesUpdate([
-  {
-    id: Date.now().toString(),
-    text: res.data[0].prompt.opener,
-    isUser: false,
-    timestamp: new Date(),
-  },
-]);
+                {
+                  id: Date.now().toString(),
+                  text: sessionRes?.data?.messages[0]?.content,
+                  isUser: false,
+                  timestamp: new Date(),
+                },
+              ]);
             }
+                
+              } catch (e) {
+                console.error('Failed to create chat session:', e);
+              }
           })
           .catch((err) => console.error('Failed to fetch initial message:', err));
       }
