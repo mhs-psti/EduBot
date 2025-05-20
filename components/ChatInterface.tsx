@@ -37,6 +37,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   title,
   subtitle,
   sessionId,
+  messages,
 }) => {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<Message[]>([]);
@@ -81,6 +82,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setMessages([]);
     }
   }, [visible]);
+
+  useEffect(() => {
+  scrollViewRef.current?.scrollToEnd({ animated: true });
+}, [messages]);
 
   const handleSend = () => {
     if (message.trim()) {
