@@ -9,7 +9,7 @@ export const AnswerWithReferences = ({
   answer: string;
   references: any[];
 }) => {
-  const parts = .split(/(##\d+\$\$)/g);
+  const parts = answer.split(/(##\d+\$\$)/g);
 
   return (
   <Text style={{ fontSize: 16, color: '#212121', flexWrap: 'wrap' }}>
