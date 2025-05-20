@@ -24,6 +24,7 @@ interface ChatInterfaceProps {
   visible: boolean;
   onClose: () => void;
   onSendMessage: (message: string) => void;
+  onMessagesUpdate: (messages: Message[] | ((prev: Message[]) => Message[])) => void;
   title: string;
   subtitle?: string;
   sessionId?: string;
@@ -61,14 +62,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         fetchInitialMessage({ name: title })
           .then((res) => {
             if (res?.data?.[0]?.prompt?.opener) {
-              setMessages([
-                {
-                  id: Date.now().toString(),
-                  text: res.data[0].prompt.opener,
-                  isUser: false,
-                  timestamp: new Date(),
-                },
-              ]);
+              onMessagesUpdate([
+  {
+    id: Date.now().toString(),
+    text: res.data[0].prompt.opener,
+    isUser: false,
+    timestamp: new Date(),
+  },
+]);
             }
           })
           .catch((err) => console.error('Failed to fetch initial message:', err));
@@ -78,7 +79,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   useEffect(() => {
     if (!visible) {
-      setMessages([]);
+      onMessagesUpdate([]);
     }
   }, [visible]);
 
@@ -94,7 +95,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         isUser: true,
         timestamp: new Date(),
       };
-      setMessages((prev) => [...prev, newMessage]);
+      onMessagesUpdate((prev) => [...prev, newMessage]);
       onSendMessage(message);
       setMessage('');
       scrollViewRef.current?.scrollToEnd({ animated: true });
