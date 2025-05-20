@@ -24,6 +24,7 @@ interface ChatInterfaceProps {
   visible: boolean;
   onClose: () => void;
   onSendMessage: (message: string) => void;
+  onSessionCreated: (sessionId: string) => void;
   onMessagesUpdate: (messages: Message[] | ((prev: Message[]) => Message[])) => void;
   title: string;
   subtitle?: string;
@@ -35,6 +36,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   visible,
   onClose,
   onSendMessage,
+  onSessionCreated,
   onMessagesUpdate,
   title,
   subtitle,
@@ -44,7 +46,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [message, setMessage] = useState('');
   const scrollViewRef = useRef<ScrollView>(null);
   const slideAnim = useRef(new Animated.Value(visible ? 0 : 1000)).current;
-  const [sessionId, setSessionId] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     Animated.spring(slideAnim, {
@@ -78,7 +79,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 timestamp: new Date(),
               },
             ]);
-            setSessionId(sessionRes?.id);
+            onSessionCreated(sessionRes?.id);
           }
         } catch (e) {
           console.error('Failed to fetch message or create session:', e);
