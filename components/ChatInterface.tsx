@@ -19,6 +19,20 @@ interface Message {
   text: string;
   isUser: boolean;
   timestamp: Date;
+  references?: ReferenceChunk[];
+}
+
+interface ReferenceChunk {
+  id: string;
+  content: string;
+  document_id: string;
+  document_name: string;
+  dataset_id: string;
+  image_id?: string;
+  similarity?: number;
+  term_similarity?: number;
+  vector_similarity?: number;
+  positions?: any[];
 }
 
 interface ChatInterfaceProps {
