@@ -1,13 +1,15 @@
 export interface ChatMessage {
-  id: string;
+  id?: string;
   content: string;
-  timestamp: number;
+  timestamp?: number;
   isUser: boolean;
 }
 
 export interface ChatSession {
   id: string;
-  timestamp: number; // from update_time
-  lastMessage: string; // from last message if available
+  chatId?: string;
+  name: string;
+  timestamp: number; // from update_time or create_time
+  lastMessage: string;
   messages: ChatMessage[];
 }
