@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,30 +13,37 @@ import {
 import { router } from 'expo-router';
 import { Search, Clock, Download, Trash2 } from 'lucide-react-native';
 import { books } from '../../data/books';
+import { fetchChatSessions } from '../../utils/api';
 import { ChatSession } from '../../types/chat';
 
-// Mock data for chat history
-const mockChatHistory: ChatSession[] = [
-  {
-    id: '1',
-    bookId: '1',
-    timestamp: Date.now() - 1000 * 60 * 30, // 30 minutes ago
-    lastMessage: "Can you explain the quadratic formula?",
-    messages: []
-  },
-  {
-    id: '2',
-    bookId: '2',
-    timestamp: Date.now() - 1000 * 60 * 60 * 2, // 2 hours ago
-    lastMessage: "What is the difference between mitosis and meiosis?",
-    messages: []
-  },
-  // Add more mock sessions as needed
-];
+const CHAT_ID = 'cf90a7b4334611f080d1ea5f1b3df08c';
 
 export default function HistoryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [chatHistory, setChatHistory] = useState(mockChatHistory);
+  const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
+
+  useEffect(() => {
+    const loadChatSessions = async () => {
+      try {
+        const response = await fetchChatSessions({
+          chatId: CHAT_ID
+        });
+        if (response?.code === 0 && Array.isArray(response.data)) {
+          const sessions = response.data.map((session: any) => ({
+            id: session.id,
+            bookId: '1', // if you can infer this dynamically, replace here
+            timestamp: session.update_time,
+            lastMessage: session.messages?.[0]?.content || 'No message yet',
+            messages: session.messages,
+          }));
+          setChatHistory(sessions);
+        }
+      } catch (error) {
+        console.error('Failed to load sessions:', error);
+      }
+    };
+    loadChatSessions();
+  }, []);
 
   const filteredHistory = chatHistory.filter(session => {
     const book = books.find(b => b.id === session.bookId);
@@ -51,16 +58,13 @@ export default function HistoryScreen() {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
     if (diffInHours < 24) {
       return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
     return date.toLocaleDateString();
   };
 
-  const handleClearHistory = () => {
-    setChatHistory([]);
-  };
+  const handleClearHistory = () => setChatHistory([]);
 
   const handleExportHistory = async () => {
     try {
@@ -70,39 +74,25 @@ export default function HistoryScreen() {
           return `Book: ${book?.title}\nLast Message: ${session.lastMessage}\nTime: ${new Date(session.timestamp).toLocaleString()}\n\n`;
         })
         .join('---\n');
-
-      await Share.share({
-        message: historyText,
-        title: 'Chat History',
-      });
+      await Share.share({ message: historyText, title: 'Chat History' });
     } catch (error) {
       console.error('Error sharing history:', error);
     }
   };
 
   const handleSessionPress = useCallback((session: ChatSession) => {
-    router.navigate({
-      pathname: '/(tabs)/book/[id]',
-      params: { id: session.bookId, chatSessionId: session.id }
-    });
+    router.navigate({ pathname: '/(tabs)/book/[id]', params: { id: session.bookId, chatSessionId: session.id } });
   }, []);
 
   const renderItem = ({ item: session }: { item: ChatSession }) => {
     const book = books.find(b => b.id === session.bookId);
-
     return (
-      <TouchableOpacity
-        style={styles.historyItem}
-        onPress={() => handleSessionPress(session)}
-        activeOpacity={0.7}
-      >
+      <TouchableOpacity style={styles.historyItem} onPress={() => handleSessionPress(session)} activeOpacity={0.7}>
         <View style={styles.historyContent}>
           <Text style={styles.bookTitle}>{book?.title}</Text>
           <Text style={styles.timestamp}>{formatTimestamp(session.timestamp)}</Text>
         </View>
-        <Text style={styles.lastMessage} numberOfLines={2}>
-          {session.lastMessage}
-        </Text>
+        <Text style={styles.lastMessage} numberOfLines={2}>{session.lastMessage}</Text>
       </TouchableOpacity>
     );
   };
@@ -132,20 +122,12 @@ export default function HistoryScreen() {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
           />
-
           <View style={styles.actionBar}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={handleExportHistory}
-            >
+            <TouchableOpacity style={styles.actionButton} onPress={handleExportHistory}>
               <Download size={20} color="#3F51B5" />
               <Text style={styles.actionText}>Export</Text>
             </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.actionButton, styles.clearButton]}
-              onPress={handleClearHistory}
-            >
+            <TouchableOpacity style={[styles.actionButton, styles.clearButton]} onPress={handleClearHistory}>
               <Trash2 size={20} color="#F44336" />
               <Text style={[styles.actionText, styles.clearText]}>Clear All</Text>
             </TouchableOpacity>
@@ -155,9 +137,7 @@ export default function HistoryScreen() {
         <View style={styles.emptyState}>
           <Clock size={48} color="#BDBDBD" />
           <Text style={styles.emptyTitle}>No Chat History</Text>
-          <Text style={styles.emptyText}>
-            Your chat conversations with AI will appear here
-          </Text>
+          <Text style={styles.emptyText}>Your chat conversations with AI will appear here</Text>
         </View>
       )}
     </SafeAreaView>
@@ -165,10 +145,7 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9F9F9',
-  },
+  container: { flex: 1, backgroundColor: '#F9F9F9' },
   header: {
     padding: 16,
     backgroundColor: '#FFFFFF',
@@ -189,42 +166,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     height: 44,
   },
-  searchIcon: {
-    marginRight: 8,
-  },
+  searchIcon: { marginRight: 8 },
   searchInput: {
     flex: 1,
     fontSize: 16,
     fontFamily: 'Inter-Regular',
     color: '#212121',
     height: '100%',
-    ...Platform.select({
-      web: {
-        outlineStyle: 'none',
-      },
-    }),
+    ...Platform.select({ web: { outlineStyle: 'none' } }),
   },
-  listContent: {
-    padding: 16,
-  },
+  listContent: { padding: 16 },
   historyItem: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-      web: {
-        boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
-      },
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+      android: { elevation: 3 },
+      web: { boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)' },
     }),
   },
   historyContent: {
@@ -264,18 +224,14 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: '#EEF1FF',
   },
-  clearButton: {
-    backgroundColor: '#FFEBEE',
-  },
+  clearButton: { backgroundColor: '#FFEBEE' },
   actionText: {
     marginLeft: 8,
     fontSize: 14,
     fontFamily: 'Inter-Medium',
     color: '#3F51B5',
   },
-  clearText: {
-    color: '#F44336',
-  },
+  clearText: { color: '#F44336' },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
