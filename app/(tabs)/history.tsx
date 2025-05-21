@@ -33,7 +33,9 @@ export default function HistoryScreen() {
             id: session.id,
             name: session.name,
             timestamp: session.update_time,
-            lastMessage: session.messages?.[0]?.content || 'No message yet',
+            lastMessage: session.messages?.length > 0 
+              ? session.messages[session.messages.length - 1].content 
+              : 'No message yet',
             messages: session.messages,
           }));
           console.log(sessions);
