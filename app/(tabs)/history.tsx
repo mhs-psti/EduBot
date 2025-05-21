@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Search, Clock, Download, Trash2 } from 'lucide-react-native';
-import { books } from '../../data/books';
 import { fetchChatSessions } from '../../utils/api';
 import { ChatSession } from '../../types/chat';
 
@@ -32,7 +31,6 @@ export default function HistoryScreen() {
         if (Array.isArray(response)) {
           const sessions = response.map((session: any) => ({
             id: session.id,
-            bookId: '1', // if you can infer this dynamically, replace here
             timestamp: session.update_time,
             lastMessage: session.messages?.[0]?.content || 'No message yet',
             messages: session.messages,
@@ -48,12 +46,8 @@ export default function HistoryScreen() {
   }, []);
 
   const filteredHistory = chatHistory.filter(session => {
-    const book = books.find(b => b.id === session.bookId);
     const searchLower = searchQuery.toLowerCase();
-    return (
-      book?.title.toLowerCase().includes(searchLower) ||
-      session.lastMessage.toLowerCase().includes(searchLower)
-    );
+    return (session.lastMessage.toLowerCase().includes(searchLower));
   });
 
   const formatTimestamp = (timestamp: number) => {
@@ -67,15 +61,14 @@ export default function HistoryScreen() {
   };
 
   const handleSessionPress = useCallback((session: ChatSession) => {
-    router.navigate({ pathname: '/(tabs)/book/[id]', params: { id: session.bookId, chatSessionId: session.id } });
+    console.log('handle open session');
   }, []);
 
   const renderItem = ({ item: session }: { item: ChatSession }) => {
-    const book = books.find(b => b.id === session.bookId);
     return (
       <TouchableOpacity style={styles.historyItem} onPress={() => handleSessionPress(session)} activeOpacity={0.7}>
         <View style={styles.historyContent}>
-          <Text style={styles.bookTitle}>{book?.title}</Text>
+          <Text style={styles.bookTitle}>{session.name}</Text>
           <Text style={styles.timestamp}>{formatTimestamp(session.timestamp)}</Text>
         </View>
         <Text style={styles.lastMessage} numberOfLines={2}>{session.lastMessage}</Text>
