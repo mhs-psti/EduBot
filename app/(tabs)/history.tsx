@@ -29,8 +29,8 @@ export default function HistoryScreen() {
           chatId: CHAT_ID
         });
         console.log(response);
-        if (response?.code === 0 && Array.isArray(response.data)) {
-          const sessions = response.data.map((session: any) => ({
+        if (Array.isArray(response)) {
+          const sessions = response.map((session: any) => ({
             id: session.id,
             bookId: '1', // if you can infer this dynamically, replace here
             timestamp: session.update_time,
