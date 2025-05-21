@@ -31,6 +31,7 @@ export default function HistoryScreen() {
         if (Array.isArray(response)) {
           const sessions = response.map((session: any) => ({
             id: session.id,
+            name: session.name,
             timestamp: session.update_time,
             lastMessage: session.messages?.[0]?.content || 'No message yet',
             messages: session.messages,
