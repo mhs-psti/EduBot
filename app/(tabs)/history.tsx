@@ -28,6 +28,7 @@ export default function HistoryScreen() {
         const response = await fetchChatSessions({
           chatId: CHAT_ID
         });
+        console.log(response);
         if (response?.code === 0 && Array.isArray(response.data)) {
           const sessions = response.data.map((session: any) => ({
             id: session.id,
@@ -36,6 +37,7 @@ export default function HistoryScreen() {
             lastMessage: session.messages?.[0]?.content || 'No message yet',
             messages: session.messages,
           }));
+          console.log(sessions);
           setChatHistory(sessions);
         }
       } catch (error) {
