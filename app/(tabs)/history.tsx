@@ -66,22 +66,6 @@ export default function HistoryScreen() {
     return date.toLocaleDateString();
   };
 
-  const handleClearHistory = () => setChatHistory([]);
-
-  const handleExportHistory = async () => {
-    try {
-      const historyText = chatHistory
-        .map(session => {
-          const book = books.find(b => b.id === session.bookId);
-          return `Book: ${book?.title}\nLast Message: ${session.lastMessage}\nTime: ${new Date(session.timestamp).toLocaleString()}\n\n`;
-        })
-        .join('---\n');
-      await Share.share({ message: historyText, title: 'Chat History' });
-    } catch (error) {
-      console.error('Error sharing history:', error);
-    }
-  };
-
   const handleSessionPress = useCallback((session: ChatSession) => {
     router.navigate({ pathname: '/(tabs)/book/[id]', params: { id: session.bookId, chatSessionId: session.id } });
   }, []);
@@ -124,16 +108,6 @@ export default function HistoryScreen() {
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
           />
-          <View style={styles.actionBar}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleExportHistory}>
-              <Download size={20} color="#3F51B5" />
-              <Text style={styles.actionText}>Export</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={[styles.actionButton, styles.clearButton]} onPress={handleClearHistory}>
-              <Trash2 size={20} color="#F44336" />
-              <Text style={[styles.actionText, styles.clearText]}>Clear All</Text>
-            </TouchableOpacity>
-          </View>
         </>
       ) : (
         <View style={styles.emptyState}>
