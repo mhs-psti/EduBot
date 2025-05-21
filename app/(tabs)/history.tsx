@@ -65,6 +65,7 @@ export default function HistoryScreen() {
   }, []);
 
   const renderItem = ({ item: session }: { item: ChatSession }) => {
+    console.log(session);
     return (
       <TouchableOpacity style={styles.historyItem} onPress={() => handleSessionPress(session)} activeOpacity={0.7}>
         <View style={styles.historyContent}>
