@@ -240,3 +240,44 @@ export async function createChatSession(chatId: string, name: string) {
     throw new Error(result.message || 'Failed to create chat session');
   }
 }
+
+export async function fetchChatSessions({
+  chatId,
+  page = 1,
+  pageSize = 30,
+  orderby = 'create_time',
+  desc = true,
+  name,
+  id,
+}: {
+  chatId: string;
+  page?: number;
+  pageSize?: number;
+  orderby?: string;
+  desc?: boolean;
+  name?: string;
+  id?: string;
+}) {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    page_size: pageSize.toString(),
+    orderby,
+    desc: desc.toString(),
+    user_id: "9d16d91b-e8ed-478f-90bf-6d82560032e8",
+  });
+
+  const response = await fetch(`${API_URL}/api/v1/chats/${chatId}/sessions?${params.toString()}`, {
+    headers: HEADERS,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch chat sessions: ${response.status}`);
+  }
+
+  const data = await response.json();
+  if (data.code !== 0) {
+    throw new Error(data.message || 'API error fetching sessions');
+  }
+
+  return data.data;
+}
