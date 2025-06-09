@@ -19,11 +19,13 @@ import Animated, {
 interface FloatingActionButtonProps {
   onPress: () => void;
   title?: string;
+  icon?: React.ReactNode;
 }
 
 export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   onPress,
   title,
+  icon,
 }) => {
   const scale = useSharedValue(1);
 
@@ -62,7 +64,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
         activeOpacity={0.7}
       >
         <Animated.View style={[styles.pulse, pulseStyle]} />
-        <MessageSquare color="#FFFFFF" size={24} />
+        {icon ? icon : <MessageSquare color="#FFFFFF" size={24} />}
       </TouchableOpacity>
     </View>
   );
