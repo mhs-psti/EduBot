@@ -1,9 +1,6 @@
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
 
-// utils/api.ts
-import RNFetchBlob from 'react-native-blob-util';
-
 const HEADERS = {
   Authorization: `Bearer ${API_KEY}`,
   'ngrok-skip-browser-warning': 'true',
@@ -191,11 +188,13 @@ export async function fetchInitialMessage({
 export async function sendChatMessage({
   chatId,
   question,
-  sessionId
+  sessionId,
+  userId
 }: {
   chatId: string;
   question: string;
   sessionId?: string;
+  userId: string;
 }) {
   const response = await fetch(`${API_URL}/api/v1/chats/${chatId}/completions`, {
     method: 'POST',
@@ -207,7 +206,7 @@ export async function sendChatMessage({
       question,
       stream: false,
       ...(sessionId ? { session_id: sessionId } : {}),
-      user_id: "9d16d91b-e8ed-478f-90bf-6d82560032e8",
+      user_id: userId,
     }),
   });
 
@@ -219,7 +218,7 @@ export async function sendChatMessage({
   }
 }
 
-export async function createChatSession(chatId: string, name: string) {
+export async function createChatSession(chatId: string, name: string, userId: string) {
   const response = await fetch(`${API_URL}/api/v1/chats/${chatId}/sessions`, {
     method: 'POST',
     headers: {
@@ -228,7 +227,7 @@ export async function createChatSession(chatId: string, name: string) {
     },
     body: JSON.stringify({
       name,
-      user_id: "9d16d91b-e8ed-478f-90bf-6d82560032e8"
+      user_id: userId
     }),
   });
 
@@ -243,6 +242,7 @@ export async function createChatSession(chatId: string, name: string) {
 
 export async function fetchChatSessions({
   chatId,
+  userId,
   page = 1,
   pageSize = 30,
   orderby = 'create_time',
@@ -251,6 +251,7 @@ export async function fetchChatSessions({
   id,
 }: {
   chatId: string;
+  userId: string;
   page?: number;
   pageSize?: number;
   orderby?: string;
@@ -263,7 +264,7 @@ export async function fetchChatSessions({
     page_size: pageSize.toString(),
     orderby,
     desc: desc.toString(),
-    user_id: "9d16d91b-e8ed-478f-90bf-6d82560032e8",
+    user_id: userId,
   });
 
   const response = await fetch(`${API_URL}/api/v1/chats/${chatId}/sessions?${params.toString()}`, {

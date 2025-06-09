@@ -9,6 +9,7 @@ import { getDocumentsByDatasetId, fetchImageWithAuth, sendChatMessage } from '..
 import { formatFileSize } from '../../../utils/app';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import { ChatInterface, Message } from '../../../components/ChatInterface';
+import { getCurrentUserId } from '../../../utils/auth';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const BASE_IMAGE_URL = `${API_URL}/v1/document/image`;
@@ -78,10 +79,16 @@ export default function BookDetailScreen() {
     setMessages((prev) => [...prev, userMsg]);
 
     try {
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
       const data = await sendChatMessage({
         chatId,
         question: userMessage,
         sessionId,
+        userId,
       });
 
       const aiMsg = {

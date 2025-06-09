@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 22,
-    fontFamily: 'Inter-Bold',
+    fontWeight: 'bold',
     color: '#3F51B5',
     marginLeft: 8,
   },
@@ -110,13 +110,13 @@ const styles = StyleSheet.create({
   welcomeTitle: {
     color: '#FFFFFF',
     fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     marginBottom: 8,
   },
   welcomeText: {
     color: 'rgba(255, 255, 255, 0.9)',
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
+    fontWeight: 'normal',
     lineHeight: 20,
   },
   section: {
@@ -124,8 +124,8 @@ const styles = StyleSheet.create({
     paddingLeft: 16,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
+    fontSize: 20,
+    fontWeight: '600',
     color: '#212121',
     marginBottom: 16,
   },
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   tipsTitle: {
     fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: '#212121',
     marginBottom: 16,
   },
@@ -165,13 +165,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
     fontSize: 12,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     marginRight: 12,
   },
   tipText: {
     flex: 1,
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
+    fontWeight: 'normal',
     color: '#424242',
     lineHeight: 20,
   },

@@ -1,46 +1,80 @@
-import { useEffect } from 'react';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import { useFrameworkReady } from '@/hooks/useFrameworkReady';
-import { useFonts, 
-  Inter_400Regular, 
-  Inter_500Medium, 
-  Inter_600SemiBold, 
-  Inter_700Bold 
-} from '@expo-google-fonts/inter';
-import { SplashScreen } from 'expo-router';
-
-// Prevent splash screen from auto-hiding
-SplashScreen.preventAutoHideAsync();
+import React, { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
+import { Stack, useRouter, useSegments } from 'expo-router';
+import { getCurrentSession, onAuthStateChange } from '../utils/auth';
 
 export default function RootLayout() {
-  useFrameworkReady();
-
-  const [fontsLoaded, fontError] = useFonts({
-    'Inter-Regular': Inter_400Regular,
-    'Inter-Medium': Inter_500Medium,
-    'Inter-SemiBold': Inter_600SemiBold,
-    'Inter-Bold': Inter_700Bold,
-  });
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter();
+  const segments = useSegments();
 
   useEffect(() => {
-    if (fontsLoaded || fontError) {
-      SplashScreen.hideAsync();
-    }
-  }, [fontsLoaded, fontError]);
+    checkAuthState();
+    
+    const { data: { subscription } } = onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, !!session);
+      setIsAuthenticated(!!session);
+      
+      // Handle sign out event
+      if (event === 'SIGNED_OUT') {
+        console.log('User signed out, redirecting to signin...');
+        router.replace('../../user/signin');
+      }
+      
+      setIsLoading(false);
+    });
 
-  // Return null to keep splash screen visible while fonts load
-  if (!fontsLoaded && !fontError) {
-    return null;
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (isLoading || isAuthenticated === null) return; // Don't redirect while loading
+
+    const inAuthGroup = segments[0] === 'user';
+    const inProtectedGroup = segments[0] === '(tabs)';
+
+    console.log('Route check:', { isAuthenticated, inAuthGroup, inProtectedGroup, segments });
+
+    if (!isAuthenticated && !inAuthGroup) {
+      // Redirect to sign in if not authenticated and not in auth group
+      console.log('Redirecting to signin...');
+      router.replace('../../user/signin');
+    } else if (isAuthenticated && inAuthGroup) {
+      // Redirect to tabs if authenticated and in auth group
+      console.log('Redirecting to tabs...');
+      router.replace('../../(tabs)');
+    }
+  }, [isAuthenticated, segments, isLoading]);
+
+  const checkAuthState = async () => {
+    try {
+      const { data } = await getCurrentSession();
+      console.log('Initial auth check:', !!data.session);
+      setIsAuthenticated(!!data.session);
+    } catch (error) {
+      console.log('Auth check error:', error);
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Show loading screen while checking auth state
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F9F9F9' }}>
+        <ActivityIndicator size="large" color="#3F51B5" />
+      </View>
+    );
   }
 
   return (
-    <>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" options={{ title: 'Oops!' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </>
+    <Stack screenOptions={{ headerShown: false }}>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="user" options={{ headerShown: false }} />
+    </Stack>
   );
 }

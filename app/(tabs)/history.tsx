@@ -12,20 +12,32 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Search, Clock, Download, Trash2 } from 'lucide-react-native';
-import { fetchChatSessions } from '../../utils/api';
+import { fetchChatSessions, sendChatMessage } from '../../utils/api';
+import { getCurrentUserId } from '../../utils/auth';
 import { ChatSession } from '../../types/chat';
+import { ChatInterface, Message } from '../../components/ChatInterface';
 
 const CHAT_ID = 'cf90a7b4334611f080d1ea5f1b3df08c';
 
 export default function HistoryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
+  const [isChatVisible, setIsChatVisible] = useState(false);
+  const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
     const loadChatSessions = async () => {
       try {
+        const userId = await getCurrentUserId();
+        if (!userId) {
+          console.error('User not authenticated');
+          return;
+        }
+
         const response = await fetchChatSessions({
-          chatId: CHAT_ID
+          chatId: CHAT_ID,
+          userId
         });
         console.log(response);
         if (Array.isArray(response)) {
@@ -64,8 +76,85 @@ export default function HistoryScreen() {
   };
 
   const handleSessionPress = useCallback((session: ChatSession) => {
-    console.log('handle open session');
+    console.log('Opening session:', session.name);
+    
+    // Clear messages first to prevent key conflicts
+    setMessages([]);
+    setCurrentSession(session);
+    
+    // Convert session messages to ChatInterface format with unique IDs
+    const formattedMessages: Message[] = session.messages?.map((msg: any, index: number) => ({
+      id: `session-${session.id}-msg-${index}-${msg.id || Date.now()}`,
+      text: msg.content,
+      isUser: msg.role === 'user' || msg.isUser,
+      timestamp: new Date(msg.timestamp || session.timestamp),
+      references: msg.references || []
+    })) || [];
+    
+    setMessages(formattedMessages);
+    setIsChatVisible(true);
   }, []);
+
+  const handleSendMessage = async (userMessage: string) => {
+    if (!currentSession) return;
+
+    // Generate unique ID with session prefix and random component
+    const userMsgId = `session-${currentSession.id}-user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const userMsg: Message = {
+      id: userMsgId,
+      text: userMessage,
+      isUser: true,
+      timestamp: new Date(),
+    };
+
+    setMessages((prev) => [...prev, userMsg]);
+
+    try {
+      const userId = await getCurrentUserId();
+      if (!userId) {
+        throw new Error('User not authenticated');
+      }
+
+      const data = await sendChatMessage({
+        chatId: CHAT_ID,
+        question: userMessage,
+        sessionId: currentSession.id,
+        userId,
+      });
+
+      const aiMsgId = `session-${currentSession.id}-ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const aiMsg: Message = {
+        id: aiMsgId,
+        text: data.answer,
+        isUser: false,
+        timestamp: new Date(),
+        references: data.reference?.chunks || []
+      };
+
+      setMessages((prev) => [...prev, aiMsg]);
+    } catch (error) {
+      console.error('Send failed:', error);
+      
+      // Add error message to chat with unique ID
+      const errorMsgId = `session-${currentSession.id}-error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const errorMsg: Message = {
+        id: errorMsgId,
+        text: "Sorry, I couldn't process your message. Please try again.",
+        isUser: false,
+        timestamp: new Date(),
+        references: []
+      };
+
+      setMessages((prev) => [...prev, errorMsg]);
+    }
+  };
+
+  const handleChatClose = () => {
+    setIsChatVisible(false);
+    setCurrentSession(null);
+    // Clear messages to prevent key conflicts when opening new sessions
+    setMessages([]);
+  };
 
   const renderItem = ({ item: session }: { item: ChatSession }) => {
     console.log(session);
@@ -113,6 +202,19 @@ export default function HistoryScreen() {
           <Text style={styles.emptyText}>Your chat conversations with AI will appear here</Text>
         </View>
       )}
+
+      {/* Chat Interface */}
+      <ChatInterface
+        visible={isChatVisible}
+        onClose={handleChatClose}
+        onSendMessage={handleSendMessage}
+        onSessionCreated={() => {}} // Not needed for existing sessions
+        onMessagesUpdate={setMessages}
+        title={currentSession?.name || 'Chat'}
+        subtitle="Continue your conversation"
+        messages={messages}
+        sessionId={currentSession?.id}
+      />
     </SafeAreaView>
   );
 }
@@ -127,7 +229,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontFamily: 'Inter-Bold',
+    fontWeight: 'bold',
     color: '#212121',
     marginBottom: 16,
   },
@@ -143,10 +245,9 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    fontFamily: 'Inter-Regular',
+    fontWeight: 'normal',
     color: '#212121',
     height: '100%',
-    ...Platform.select({ web: { outlineStyle: 'none' } }),
   },
   listContent: { padding: 16 },
   historyItem: {
@@ -168,17 +269,17 @@ const styles = StyleSheet.create({
   },
   bookTitle: {
     fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: '#212121',
   },
   timestamp: {
     fontSize: 12,
-    fontFamily: 'Inter-Regular',
+    fontWeight: 'normal',
     color: '#757575',
   },
   lastMessage: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
+    fontWeight: 'normal',
     color: '#616161',
     lineHeight: 20,
   },
@@ -201,7 +302,7 @@ const styles = StyleSheet.create({
   actionText: {
     marginLeft: 8,
     fontSize: 14,
-    fontFamily: 'Inter-Medium',
+    fontWeight: '500',
     color: '#3F51B5',
   },
   clearText: { color: '#F44336' },
@@ -213,14 +314,14 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
+    fontWeight: '600',
     color: '#616161',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyText: {
     fontSize: 14,
-    fontFamily: 'Inter-Regular',
+    fontWeight: 'normal',
     color: '#9E9E9E',
     textAlign: 'center',
   },

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Send, X } from 'lucide-react-native';
 import { fetchInitialMessage, createChatSession } from '../utils/api';
+import { getCurrentUserId } from '../utils/auth';
 import { AnswerWithReferences } from './chat/AnswerWithReferences';
 
 export interface ReferenceChunk {
@@ -77,8 +78,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       if (!visible || sessionId) return;
 
       try {
+        const userId = await getCurrentUserId();
+        if (!userId) {
+          console.error('User not authenticated');
+          return;
+        }
+
         const res = await fetchInitialMessage({ name: title });
-        const sessionRes = await createChatSession(res.data[0].id, 'new session');
+        const sessionRes = await createChatSession(res.data[0].id, 'new session', userId);
 
         if (sessionRes?.messages?.[0]?.content) {
           onMessagesUpdate([

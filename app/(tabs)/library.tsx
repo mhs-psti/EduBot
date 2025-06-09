@@ -70,15 +70,14 @@ if (Array.isArray(response?.data)) {
     <SafeAreaView style={styles.container}>
       {/* Search & Filter */}
       <View style={styles.header}>
-        <Text style={styles.title}>Library</Text>
+        <Text style={styles.headerTitle}>Library</Text>
         <View style={styles.searchContainer}>
           <Search size={20} color="#757575" style={styles.searchIcon} />
           <TextInput
-            style={styles.searchInput}
             placeholder="Search books..."
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#9E9E9E"
+            style={styles.searchInput}
           />
         </View>
         <View style={styles.filterContainer}>
@@ -113,47 +112,46 @@ if (Array.isArray(response?.data)) {
   );
 }
 
-// You can keep your styles definition unchanged
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F9F9F9',
   },
-  header: {
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  title: {
+  header: {
+    backgroundColor: '#3F51B5',
+    paddingTop: 50,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  headerTitle: {
     fontSize: 24,
-    fontFamily: 'Inter-Bold',
-    color: '#212121',
-    marginBottom: 16,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textAlign: 'center',
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 44,
+    paddingHorizontal: 16,
+    height: 48,
+    marginTop: 16,
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 12,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    fontFamily: 'Inter-Regular',
+    fontWeight: 'normal',
     color: '#212121',
     height: '100%',
-    ...Platform.select({
-      web: {
-        outlineStyle: 'none',
-      },
-    }),
   },
   filterContainer: {
     marginTop: 16,
@@ -161,14 +159,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   content: {
-    padding: 16,
+    flex: 1,
+    padding: 20,
   },
   section: {
     marginBottom: 24,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
+    fontSize: 20,
+    fontWeight: 'normal',
     color: '#212121',
     marginBottom: 16,
   },
@@ -176,6 +175,26 @@ const styles = StyleSheet.create({
     paddingRight: 16,
   },
   bookCard: {
-    marginRight: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  bookTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#212121',
+    marginBottom: 8,
+  },
+  bookDescription: {
+    fontSize: 14,
+    fontWeight: 'normal',
+    color: '#757575',
+    lineHeight: 20,
   },
 });
