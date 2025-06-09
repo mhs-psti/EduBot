@@ -281,3 +281,31 @@ export async function fetchChatSessions({
 
   return data.data;
 }
+
+export async function fetchDocumentChunks({
+  datasetId,
+  documentId,
+}: {
+  datasetId: string;
+  documentId: string;
+}) {
+  try {
+    if (!datasetId || !documentId) {
+      throw new Error('datasetId and documentId are required');
+    }
+    const response = await fetch(
+      `${API_URL}/api/v1/datasets/${datasetId}/documents/${documentId}/chunks`,
+      {
+        headers: HEADERS,
+      }
+    );
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error fetching document chunks:', error);
+    throw error;
+  }
+}

@@ -20,12 +20,14 @@ interface FloatingActionButtonProps {
   onPress: () => void;
   title?: string;
   icon?: React.ReactNode;
+  absolute?: boolean;
 }
 
 export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   onPress,
   title,
   icon,
+  absolute = false,
 }) => {
   const scale = useSharedValue(1);
 
@@ -51,7 +53,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
   });
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, absolute && styles.absolute]}>
       {title && (
         <View style={styles.labelContainer}>
           <Text style={styles.label}>{title}</Text>
@@ -72,6 +74,9 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
 
 const styles = StyleSheet.create({
   container: {
+    alignItems: 'flex-end',
+  },
+  absolute: {
     position: 'absolute',
     bottom: 24,
     right: 24,

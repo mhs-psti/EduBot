@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     maxHeight: 100,
     minHeight: 48,
     ...Platform.select({
-      web: { outlineStyle: 'none' },
+      web: {  },
     }),
   },
   sendButton: {

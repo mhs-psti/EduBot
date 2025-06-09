@@ -8,7 +8,7 @@ import { LoadingIndicator } from '../../../components/LoadingIndicator';
 import { getDocumentsByDatasetId, fetchImageWithAuth, sendChatMessage } from '../../../utils/api';
 import { formatFileSize } from '../../../utils/app';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
-import { ChatInterface } from '../../../components/ChatInterface';
+import { ChatInterface, Message } from '../../../components/ChatInterface';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const BASE_IMAGE_URL = `${API_URL}/v1/document/image`;
@@ -135,8 +135,8 @@ export default function BookDetailScreen() {
             key={doc.id}
             onPress={() =>
               router.navigate({
-                pathname: `/document/preview/${doc.id}`,
-                params: { name: doc.name },
+                pathname: "/document/preview/[id]",
+                params: { id: doc.id, name: doc.name, dataset_id: id },
               })
             }
           >
@@ -165,6 +165,7 @@ export default function BookDetailScreen() {
       <FloatingActionButton
         onPress={() => setIsChatVisible(true)}
         title="Ask AI Assistant"
+        absolute
       />
 
       {/* Chat Interface */}
