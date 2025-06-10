@@ -15,38 +15,18 @@ import { Send, X } from 'lucide-react-native';
 import { fetchInitialMessage, createChatSession } from '../utils/api';
 import { getCurrentUserId } from '../utils/auth';
 import { AnswerWithReferences } from './chat/AnswerWithReferences';
-
-export interface ReferenceChunk {
-  id: string;
-  content: string;
-  document_id: string;
-  document_name: string;
-  dataset_id: string;
-  image_id?: string;
-  similarity?: number;
-  term_similarity?: number;
-  vector_similarity?: number;
-  positions?: any[];
-}
-
-export interface Message {
-  id: string;
-  text: string;
-  isUser: boolean;
-  timestamp: Date;
-  references?: ReferenceChunk[];
-}
+import { ChatMessage } from '@/types/chat';
 
 interface ChatInterfaceProps {
   visible: boolean;
   onClose: () => void;
   onSendMessage: (message: string) => void;
   onSessionCreated: (sessionId: string) => void;
-  onMessagesUpdate: (messages: Message[] | ((prev: Message[]) => Message[])) => void;
+  onMessagesUpdate: (messages: ChatMessage[] | ((prev: ChatMessage[]) => ChatMessage[])) => void;
   title: string;
   subtitle?: string;
   sessionId?: string;
-  messages: Message[];
+  messages: ChatMessage[];
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -91,7 +71,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           onMessagesUpdate([
             {
               id: Date.now().toString(),
-              text: sessionRes.messages[0].content,
+              content: sessionRes.messages[0].content,
               isUser: false,
               timestamp: new Date(),
             },
@@ -152,9 +132,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           >
             <View style={[styles.message, msg.isUser ? styles.userMessage : styles.botMessage]}>
               {msg.isUser ? (
-                <Text style={[styles.messageText, styles.userMessageText]}>{msg.text}</Text>
+                <Text style={[styles.messageText, styles.userMessageText]}>{msg.content}</Text>
               ) : (
-                <AnswerWithReferences answer={msg.text} references={msg.references || []} />
+                <AnswerWithReferences answer={msg.content} references={msg.references || []} />
               )}
               <Text style={styles.timestamp}>{formatTime(msg.timestamp)}</Text>
             </View>
@@ -217,14 +197,12 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontFamily: 'Inter-SemiBold',
     color: '#212121',
   },
   headerSubtitle: {
     fontSize: 14,
     color: '#757575',
     marginTop: 2,
-    fontFamily: 'Inter-Regular',
   },
   closeButton: {
     padding: 8,

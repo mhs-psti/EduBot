@@ -3,15 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  Image,
   ScrollView,
   TouchableOpacity,
-  TextInput,
-  Platform,
   SafeAreaView,
   Modal,
 } from 'react-native';
-import { Pencil, Mail, Phone, GraduationCap, Calendar, Award } from 'lucide-react-native';
 import { getCurrentUser, signOut } from '../../utils/auth';
 import { useRouter } from 'expo-router';
 import { AlertModal } from '../../components/AlertModal';
@@ -24,16 +20,6 @@ export default function ProfileScreen() {
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const router = useRouter();
   const { alertState, showAlert, hideAlert } = useAlertModal();
-
-  // Mock student data (keep as fallback)
-  const mockStudentData = {
-    name: 'John Doe',
-    studentId: 'STU2024001',
-    email: 'john.doe@university.edu',
-    major: 'Computer Science',
-    year: 'Junior',
-    gpa: '3.85',
-  };
 
   useEffect(() => {
     loadUser();
@@ -117,14 +103,10 @@ export default function ProfileScreen() {
     }
   };
 
-  const userData = user ? {
+  const userData = {
     name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-    email: user.email,
-    studentId: user.user_metadata?.student_id || 'STU2024001',
-    major: user.user_metadata?.major || 'Computer Science',
-    year: user.user_metadata?.year || 'Junior',
-    gpa: user.user_metadata?.gpa || '3.85',
-  } : mockStudentData;
+    email: user.email
+  };
 
   if (loading) {
     return (
@@ -151,32 +133,8 @@ export default function ProfileScreen() {
             </View>
             
             <View style={styles.infoRow}>
-              <Text style={styles.label}>Student ID</Text>
-              <Text style={styles.value}>{userData.studentId}</Text>
-            </View>
-            
-            <View style={styles.infoRow}>
               <Text style={styles.label}>Email</Text>
               <Text style={styles.value}>{userData.email}</Text>
-            </View>
-          </View>
-          
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Academic Information</Text>
-            
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Major</Text>
-              <Text style={styles.value}>{userData.major}</Text>
-            </View>
-            
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>Year</Text>
-              <Text style={styles.value}>{userData.year}</Text>
-            </View>
-            
-            <View style={styles.infoRow}>
-              <Text style={styles.label}>GPA</Text>
-              <Text style={styles.value}>{userData.gpa}</Text>
             </View>
           </View>
           

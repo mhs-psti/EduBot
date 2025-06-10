@@ -58,19 +58,17 @@ const styles = StyleSheet.create({
     width: '90%',
   },
   docName: {
-    fontFamily: 'Inter-Bold', // ganti sesuai font yang kamu pakai
+    fontWeight: 'bold',
     fontSize: 16,
     marginBottom: 8,
   },
   chunkContent: {
-    fontFamily: 'Inter-Regular',
     fontSize: 15,
     lineHeight: 22,
     color: '#212121',
   },
   closeBtn: {
     marginTop: 12,
-    fontFamily: 'Inter-Regular',
     color: '#3F51B5',
     fontWeight: '600',
     textAlign: 'right',

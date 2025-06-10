@@ -8,8 +8,9 @@ import { LoadingIndicator } from '../../../components/LoadingIndicator';
 import { getDocumentsByDatasetId, fetchImageWithAuth, sendChatMessage } from '../../../utils/api';
 import { formatFileSize } from '../../../utils/app';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
-import { ChatInterface, Message } from '../../../components/ChatInterface';
+import { ChatInterface } from '../../../components/ChatInterface';
 import { getCurrentUserId } from '../../../utils/auth';
+import { ChatMessage } from '@/types/chat';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const BASE_IMAGE_URL = `${API_URL}/v1/document/image`;
@@ -21,7 +22,7 @@ export default function BookDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [thumbnails, setThumbnails] = useState<Record<string, string>>({});
   const [isChatVisible, setIsChatVisible] = useState(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
   const [chatId] = useState('cf90a7b4334611f080d1ea5f1b3df08c');
 
@@ -71,7 +72,7 @@ export default function BookDetailScreen() {
   const handleSendMessage = async (userMessage: string) => {
     const userMsg = {
       id: Date.now().toString(),
-      text: userMessage,
+      content: userMessage,
       isUser: true,
       timestamp: new Date(),
     };
@@ -93,7 +94,7 @@ export default function BookDetailScreen() {
 
       const aiMsg = {
         id: Date.now().toString(),
-        text: data.answer,
+        content: data.answer,
         isUser: false,
         timestamp: new Date(),
         references: data.reference?.chunks || []
@@ -218,7 +219,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 24,
-    fontFamily: 'Inter-Bold',
+    fontWeight: 'bold',
     color: '#212121',
   },
   documentCard: {
@@ -241,7 +242,6 @@ const styles = StyleSheet.create({
   },
   docTitle: {
     fontSize: 16,
-    fontFamily: 'Inter-SemiBold',
     marginBottom: 4,
   },
   docMeta: {

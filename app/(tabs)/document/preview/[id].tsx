@@ -297,7 +297,6 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontFamily: 'Inter-SemiBold',
     color: '#212121',
   },
   pdfContainer: {
@@ -320,13 +319,12 @@ const styles = StyleSheet.create({
   },
   summaryTitle: {
     fontSize: 18,
-    fontFamily: 'Inter-Bold',
+    fontWeight: 'bold',
     marginBottom: 12,
     color: '#212121',
   },
   summaryContent: {
     fontSize: 15,
-    fontFamily: 'Inter-Regular',
     color: '#212121',
     marginBottom: 20,
     textAlign: 'center',
@@ -342,17 +340,6 @@ const styles = StyleSheet.create({
     bottom: 24,
     right: 24,
     alignItems: 'flex-end',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 15,
-    fontFamily: 'Inter-Regular',
-    minHeight: 60,
-    backgroundColor: '#FAFAFA',
-    marginBottom: 8,
   },
   addBtn: {
     backgroundColor: '#3F51B5',

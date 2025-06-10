@@ -6,16 +6,14 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
-  Share,
   Platform,
   SafeAreaView,
 } from 'react-native';
-import { router } from 'expo-router';
-import { Search, Clock, Download, Trash2 } from 'lucide-react-native';
+import { Search, Clock } from 'lucide-react-native';
 import { fetchChatSessions, sendChatMessage } from '../../utils/api';
 import { getCurrentUserId } from '../../utils/auth';
-import { ChatSession } from '../../types/chat';
-import { ChatInterface, Message } from '../../components/ChatInterface';
+import { ChatMessage, ChatSession } from '../../types/chat';
+import { ChatInterface } from '../../components/ChatInterface';
 
 const CHAT_ID = 'cf90a7b4334611f080d1ea5f1b3df08c';
 
@@ -24,7 +22,7 @@ export default function HistoryScreen() {
   const [chatHistory, setChatHistory] = useState<ChatSession[]>([]);
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   useEffect(() => {
     const loadChatSessions = async () => {
@@ -83,9 +81,9 @@ export default function HistoryScreen() {
     setCurrentSession(session);
     
     // Convert session messages to ChatInterface format with unique IDs
-    const formattedMessages: Message[] = session.messages?.map((msg: any, index: number) => ({
+    const formattedMessages: ChatMessage[] = session.messages?.map((msg: any, index: number) => ({
       id: `session-${session.id}-msg-${index}-${msg.id || Date.now()}`,
-      text: msg.content,
+      content: msg.content,
       isUser: msg.role === 'user' || msg.isUser,
       timestamp: new Date(msg.timestamp || session.timestamp),
       references: msg.references || []
@@ -100,9 +98,9 @@ export default function HistoryScreen() {
 
     // Generate unique ID with session prefix and random component
     const userMsgId = `session-${currentSession.id}-user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const userMsg: Message = {
+    const userMsg: ChatMessage = {
       id: userMsgId,
-      text: userMessage,
+      content: userMessage,
       isUser: true,
       timestamp: new Date(),
     };
@@ -123,9 +121,9 @@ export default function HistoryScreen() {
       });
 
       const aiMsgId = `session-${currentSession.id}-ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const aiMsg: Message = {
+      const aiMsg: ChatMessage = {
         id: aiMsgId,
-        text: data.answer,
+        content: data.answer,
         isUser: false,
         timestamp: new Date(),
         references: data.reference?.chunks || []
@@ -137,9 +135,9 @@ export default function HistoryScreen() {
       
       // Add error message to chat with unique ID
       const errorMsgId = `session-${currentSession.id}-error-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const errorMsg: Message = {
+      const errorMsg: ChatMessage = {
         id: errorMsgId,
-        text: "Sorry, I couldn't process your message. Please try again.",
+        content: "Sorry, I couldn't process your message. Please try again.",
         isUser: false,
         timestamp: new Date(),
         references: []
