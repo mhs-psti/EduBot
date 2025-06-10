@@ -12,7 +12,7 @@ import {
   Animated,
 } from 'react-native';
 import { Send, X } from 'lucide-react-native';
-import { fetchInitialMessage, createChatSession } from '../utils/api';
+import { fetchInitialMessage, createChatSession, fetchRelatedQuestions } from '../utils/api';
 import { getCurrentUserId } from '../utils/auth';
 import { AnswerWithReferences } from './chat/AnswerWithReferences';
 import { ChatMessage } from '@/types/chat';
@@ -41,6 +41,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   messages,
 }) => {
   const [message, setMessage] = useState('');
+  const [relatedQuestions, setRelatedQuestions] = useState<string[]>([]);
+  const [showRelatedQuestions, setShowRelatedQuestions] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const slideAnim = useRef(new Animated.Value(visible ? 0 : 1000)).current;
 
@@ -92,6 +94,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   useEffect(() => {
     scrollViewRef.current?.scrollToEnd({ animated: true });
+    
+    // Check if last message from user is a question
+    const lastUserMessage = messages.filter(msg => msg.isUser).pop();
+    if (lastUserMessage && lastUserMessage.content.includes('?')) {
+      generateRelatedQuestions(lastUserMessage.content);
+      setShowRelatedQuestions(true);
+    } else {
+      setShowRelatedQuestions(false);
+      setRelatedQuestions([]);
+    }
   }, [messages]);
 
   const handleSend = () => {
@@ -104,6 +116,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const formatTime = (date: Date) =>
     date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  const generateRelatedQuestions = async (userQuestion: string) => {
+    try {
+      const questions = await fetchRelatedQuestions(userQuestion);
+      setRelatedQuestions(questions);
+    } catch (error) {
+      console.error('Failed to fetch related questions:', error);
+      setRelatedQuestions([]);
+    }
+  };
+
+  const handleRelatedQuestionPress = (question: string) => {
+    setMessage(question);
+    setShowRelatedQuestions(false);
+  };
 
   return (
     <Animated.View style={[styles.container, { transform: [{ translateY: slideAnim }] }]}>      
@@ -141,6 +168,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </View>
         ))}
       </ScrollView>
+
+      {/* Related Questions */}
+      {showRelatedQuestions && relatedQuestions.length > 0 && (
+        <View style={styles.relatedQuestionsContainer}>
+          <Text style={styles.relatedQuestionsTitle}>Pertanyaan Terkait:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.relatedQuestionsScroll}>
+            {relatedQuestions.map((question, index) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.relatedQuestionItem}
+                onPress={() => handleRelatedQuestionPress(question)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.relatedQuestionText} numberOfLines={3}>
+                  {question}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -289,5 +337,41 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#BDBDBD',
+  },
+  // Related Questions Styles
+  relatedQuestionsContainer: {
+    backgroundColor: '#F8F9FA',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  relatedQuestionsTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#424242',
+    marginBottom: 8,
+  },
+  relatedQuestionsScroll: {
+    paddingRight: 16,
+  },
+  relatedQuestionItem: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 12,
+    marginRight: 8,
+    width: 200,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    ...Platform.select({
+      ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.1, shadowRadius: 2 },
+      android: { elevation: 2 },
+      web: { boxShadow: '0px 1px 2px rgba(0, 0, 0, 0.1)' },
+    }),
+  },
+  relatedQuestionText: {
+    fontSize: 14,
+    color: '#424242',
+    lineHeight: 18,
   },
 });

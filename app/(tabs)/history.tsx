@@ -86,7 +86,7 @@ export default function HistoryScreen() {
       content: msg.content,
       isUser: msg.role === 'user' || msg.isUser,
       timestamp: new Date(msg.timestamp || session.timestamp),
-      references: msg.references || []
+      references: msg.reference || []
     })) || [];
     
     setMessages(formattedMessages);

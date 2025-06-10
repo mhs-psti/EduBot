@@ -283,6 +283,38 @@ export async function fetchChatSessions({
   return data.data;
 }
 
+export async function fetchRelatedQuestions(question: string): Promise<string[]> {
+  try {
+    const response = await fetch(`${API_URL}/api/v1/sessions/related_questions`, {
+      method: 'POST',
+      headers: {
+        ...HEADERS,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        question,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch related questions: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.code === 0 && Array.isArray(data.data)) {
+      return data.data;
+    } else {
+      console.error('Invalid response format:', data);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching related questions:', error);
+    // Return fallback questions on error
+    return [];
+  }
+}
+
 export async function fetchDocumentChunks({
   datasetId,
   documentId,

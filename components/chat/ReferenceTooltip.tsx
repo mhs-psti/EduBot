@@ -1,9 +1,98 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Text, TouchableOpacity, View, Image, StyleSheet } from 'react-native';
+import { Modal, Text, TouchableOpacity, View, Image, StyleSheet, ScrollView } from 'react-native';
 import { fetchImageWithAuth } from '../../utils/api';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const BASE_IMAGE_URL = `${API_URL}/v1/document/image`;
+
+// Component to render formatted text
+const FormattedText = ({ content }: { content: string }) => {
+  const renderFormattedContent = () => {
+    const lines = content.split('\n');
+    const elements: React.ReactNode[] = [];
+    
+    lines.forEach((line, index) => {
+      const trimmedLine = line.trim();
+      
+      // Skip empty lines
+      if (!trimmedLine) {
+        elements.push(<Text key={index} style={styles.lineBreak}>{'\n'}</Text>);
+        return;
+      }
+      
+      // Handle headings (### text)
+      if (trimmedLine.startsWith('###')) {
+        const headingText = trimmedLine.replace(/^###\s*/, '');
+        elements.push(
+          <Text key={index} style={styles.heading}>
+            {headingText}{'\n'}
+          </Text>
+        );
+        return;
+      }
+      
+      // Handle page markers (--- Page X ---)
+      if (trimmedLine.startsWith('---') && trimmedLine.includes('Page')) {
+        elements.push(
+          <Text key={index} style={styles.pageMarker}>
+            {trimmedLine}{'\n'}
+          </Text>
+        );
+        return;
+      }
+      
+      // Handle numbered lists (1. 2. 3. etc.)
+      if (/^\d+\.\s/.test(trimmedLine)) {
+        const listText = parseInlineFormatting(trimmedLine);
+        elements.push(
+          <Text key={index} style={styles.numberedList}>
+            {listText}{'\n'}
+          </Text>
+        );
+        return;
+      }
+      
+      // Handle lettered sub-lists (a. b. c. etc.)
+      if (/^[a-z]\.\s/.test(trimmedLine)) {
+        const listText = parseInlineFormatting(trimmedLine);
+        elements.push(
+          <Text key={index} style={styles.letteredList}>
+            {listText}{'\n'}
+          </Text>
+        );
+        return;
+      }
+      
+      // Handle regular paragraphs
+      const formattedText = parseInlineFormatting(trimmedLine);
+      elements.push(
+        <Text key={index} style={styles.paragraph}>
+          {formattedText}{'\n'}
+        </Text>
+      );
+    });
+    
+    return elements;
+  };
+  
+  // Parse inline formatting like **bold text**
+  const parseInlineFormatting = (text: string) => {
+    const parts = text.split(/(\*\*[^*]+\*\*)/g);
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        const boldText = part.slice(2, -2);
+        return (
+          <Text key={index} style={styles.boldText}>
+            {boldText}
+          </Text>
+        );
+      }
+      return part;
+    });
+  };
+  
+  return <View>{renderFormattedContent()}</View>;
+};
 
 export const ReferenceTooltip = ({ chunk }: { chunk: any }) => {
   const [visible, setVisible] = useState(false);
@@ -25,14 +114,16 @@ export const ReferenceTooltip = ({ chunk }: { chunk: any }) => {
     <View style={styles.overlay}>
       <View style={styles.popup}>
         <Text style={styles.docName}>{chunk.document_name}</Text>
-        {imageUri && (
-              <Image
-                source={{ uri: imageUri }}
-                style={{ width: '100%', height: 200, marginBottom: 12, borderRadius: 6 }}
-                resizeMode="contain"
-              />
-            )}
-        <Text style={styles.chunkContent}>{chunk.content}</Text>
+        <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {imageUri && (
+                <Image
+                  source={{ uri: imageUri }}
+                  style={{ width: '100%', height: 200, marginBottom: 12, borderRadius: 6 }}
+                  resizeMode="contain"
+                />
+              )}
+          <FormattedText content={chunk.content} />
+        </ScrollView>
         <TouchableOpacity onPress={() => setVisible(false)}>
           <Text style={styles.closeBtn}>Tutup</Text>
         </TouchableOpacity>
@@ -56,16 +147,57 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     width: '90%',
+    maxHeight: '80%',
   },
   docName: {
     fontWeight: 'bold',
     fontSize: 16,
     marginBottom: 8,
   },
-  chunkContent: {
+  scrollContent: {
+    flex: 1,
+    marginBottom: 8,
+  },
+  // Formatted text styles
+  heading: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#212121',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  paragraph: {
     fontSize: 15,
     lineHeight: 22,
     color: '#212121',
+    marginBottom: 4,
+  },
+  numberedList: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#212121',
+    marginBottom: 4,
+    fontWeight: '500',
+  },
+  letteredList: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: '#212121',
+    marginBottom: 2,
+    marginLeft: 16,
+  },
+  boldText: {
+    fontWeight: 'bold',
+  },
+  pageMarker: {
+    fontSize: 13,
+    color: '#757575',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    marginVertical: 8,
+  },
+  lineBreak: {
+    height: 8,
   },
   closeBtn: {
     marginTop: 12,
