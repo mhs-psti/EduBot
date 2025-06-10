@@ -17,21 +17,11 @@ import { ErrorMessage } from '../../../../components/ErrorMessage';
 import { FloatingActionButton } from '../../../../components/FloatingActionButton';
 import { downloadPdf } from '../../../../utils/downloadPdf';
 import { fetchPdfWithAuth, fetchDocumentChunks } from '../../../../utils/api';
+import { generateDocumentSummary } from '../../../../utils/openai';
 import { supabase } from '../../../../utils/app';
-import OpenAI from 'openai';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const BASE_DOCUMENT_URL = `${API_URL}/v1/document/get`;
-
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.EXPO_PUBLIC_OPENROUTER_API_KEY,
-  dangerouslyAllowBrowser: true,
-  defaultHeaders: {
-    "HTTP-Referer": process.env.EXPO_PUBLIC_SITE_URL,
-    "X-Title": process.env.EXPO_PUBLIC_SITE_NAME,
-  },
-});
 
 export default function DocumentPreviewScreen() {
   const { id, name, dataset_id } = useLocalSearchParams<{ id: string; name?: string; dataset_id?: string }>();
@@ -150,28 +140,8 @@ export default function DocumentPreviewScreen() {
       }
       const allContent = data.data.chunks.map((c: any) => c.content).join("\n\n");
   
-      // 3. Generate summary with OpenAI (OpenRouter)
-      const completion = await openai.chat.completions.create({
-        model: "google/gemini-2.5-pro-preview",
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Summarize the following document in Bahasa Indonesia. Provide only the summary content directly, without any introductory sentences or explanations:\n\n" + allContent,
-              },
-            ],
-          },
-        ],
-      });
-  
-      const summaryText = completion.choices[0]?.message?.content?.trim();
-      if (!summaryText) {
-        setSummaryError("Failed to generate summary");
-        setAddLoading(false);
-        return;
-      }
+            // 3. Generate summary with OpenAI (OpenRouter)
+      const summaryText = await generateDocumentSummary(allContent);
   
       // 4. Save summary to Supabase
       const { error } = await supabase

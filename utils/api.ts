@@ -240,6 +240,32 @@ export async function createChatSession(chatId: string, name: string, userId: st
   }
 }
 
+export async function updateChatSessionName(chatId: string, sessionId: string, name: string) {
+  try {
+    const response = await fetch(`${API_URL}/api/v1/chats/${chatId}/sessions/${sessionId}`, {
+      method: 'PUT',
+      headers: {
+        ...HEADERS,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (result.code === 0) {
+      return result.data;
+    } else {
+      throw new Error(result.message || 'Failed to update session name');
+    }
+  } catch (error) {
+    console.error('Error updating session name:', error);
+    throw error;
+  }
+}
+
 export async function fetchChatSessions({
   chatId,
   userId,
@@ -372,6 +398,9 @@ export function findChatAssistantByBookName(bookName: string, assistants: ChatAs
   
   return assistant || null;
 }
+
+// Session name generation is now handled in utils/openai.ts
+export { generateShortSessionName } from './openai';
 
 export async function fetchDocumentChunks({
   datasetId,

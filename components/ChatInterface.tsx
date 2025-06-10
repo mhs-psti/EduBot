@@ -12,7 +12,8 @@ import {
   Animated,
 } from 'react-native';
 import { Send, X } from 'lucide-react-native';
-import { fetchInitialMessage, createChatSession, fetchRelatedQuestions } from '../utils/api';
+import { fetchInitialMessage, createChatSession, fetchRelatedQuestions, updateChatSessionName } from '../utils/api';
+import { generateShortSessionName } from '../utils/openai';
 import { getCurrentUserId } from '../utils/auth';
 import { AnswerWithReferences } from './chat/AnswerWithReferences';
 import { ChatMessage } from '@/types/chat';
@@ -27,6 +28,7 @@ interface ChatInterfaceProps {
   subtitle?: string;
   sessionId?: string;
   messages: ChatMessage[];
+  chatId?: string;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -39,10 +41,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   subtitle,
   sessionId,
   messages,
+  chatId,
 }) => {
   const [message, setMessage] = useState('');
   const [relatedQuestions, setRelatedQuestions] = useState<string[]>([]);
   const [showRelatedQuestions, setShowRelatedQuestions] = useState(false);
+  const [isNewSession, setIsNewSession] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const slideAnim = useRef(new Animated.Value(visible ? 0 : 1000)).current;
 
@@ -66,8 +71,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           return;
         }
 
-        const res = await fetchInitialMessage({ name: title });
-        const sessionRes = await createChatSession(res.data[0].id, 'new session', userId);
+        let targetChatId = chatId;
+        
+        // If chatId is not provided, fetch it from the API
+        if (!targetChatId) {
+          const res = await fetchInitialMessage({ name: title });
+          targetChatId = res.data[0].id;
+        }
+        
+        if (!targetChatId) {
+          console.error('No chat ID available');
+          return;
+        }
+        
+        setCurrentChatId(targetChatId);
+        const sessionRes = await createChatSession(targetChatId, 'new session', userId);
 
         if (sessionRes?.messages?.[0]?.content) {
           onMessagesUpdate([
@@ -79,6 +97,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             },
           ]);
           onSessionCreated(sessionRes?.id);
+          setIsNewSession(true);
         }
       } catch (e) {
         console.error('Failed to fetch or create session:', e);
@@ -86,10 +105,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     };
 
     initializeChat();
-  }, [visible, title, sessionId]);
+  }, [visible, title, sessionId, chatId]);
 
   useEffect(() => {
-    if (!visible) onMessagesUpdate([]);
+    if (!visible) {
+      onMessagesUpdate([]);
+      setIsNewSession(false);
+      setCurrentChatId(null);
+    }
   }, [visible]);
 
   useEffect(() => {
@@ -106,12 +129,25 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [messages]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!message.trim()) return;
 
-    onSendMessage(message);
+    const userMessage = message.trim();
     setMessage('');
     scrollViewRef.current?.scrollToEnd({ animated: true });
+
+    // If this is a new session and it's the first user message, generate a short session name
+    if (isNewSession && currentChatId && sessionId && messages.filter(msg => msg.isUser).length === 0) {
+      try {
+        const shortName = await generateShortSessionName(userMessage);
+        await updateChatSessionName(currentChatId, sessionId, shortName);
+        setIsNewSession(false);
+      } catch (error) {
+        console.error('Failed to update session name:', error);
+      }
+    }
+
+    onSendMessage(userMessage);
   };
 
   const formatTime = (date: Date) =>
@@ -139,6 +175,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <View style={{ flex: 1 }}>
             <Text style={styles.headerTitle}>{title}</Text>
             {subtitle && <Text style={styles.headerSubtitle}>{subtitle}</Text>}
+            {!subtitle && isNewSession && <Text style={styles.headerSubtitle}>Percakapan Baru</Text>}
           </View>
           <TouchableOpacity onPress={onClose} style={styles.closeButton}>
             <X size={24} color="#212121" />

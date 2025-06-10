@@ -229,6 +229,7 @@ export default function BookDetailScreen() {
           title={chatAssistant?.name || `${name} Assistant`}
           messages={messages}
           sessionId={sessionId}
+          chatId={chatId}
         />
       )}
 

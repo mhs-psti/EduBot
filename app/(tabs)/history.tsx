@@ -240,8 +240,8 @@ export default function HistoryScreen() {
         onSendMessage={handleSendMessage}
         onSessionCreated={() => {}} // Not needed for existing sessions
         onMessagesUpdate={setMessages}
-        title={currentSession?.assistantName || currentSession?.name || 'Chat'}
-        subtitle="Continue your conversation"
+        title={currentSession?.name || currentSession?.name || 'Chat'}
+        subtitle={currentSession?.assistantName}
         messages={messages}
         sessionId={currentSession?.id}
       />
