@@ -10,12 +10,11 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Search, Clock } from 'lucide-react-native';
-import { fetchChatSessions, sendChatMessage } from '../../utils/api';
+import { fetchChatSessions, sendChatMessage, fetchChatAssistants, ChatAssistant } from '../../utils/api';
 import { getCurrentUserId } from '../../utils/auth';
 import { ChatMessage, ChatSession } from '../../types/chat';
 import { ChatInterface } from '../../components/ChatInterface';
-
-const CHAT_ID = 'cf90a7b4334611f080d1ea5f1b3df08c';
+import { AlertModal } from '../../components/AlertModal';
 
 export default function HistoryScreen() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,8 +22,19 @@ export default function HistoryScreen() {
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatAssistants, setChatAssistants] = useState<ChatAssistant[]>([]);
+  const [showNoAssistantModal, setShowNoAssistantModal] = useState(false);
 
   useEffect(() => {
+    const loadChatAssistants = async () => {
+      try {
+        const assistants = await fetchChatAssistants();
+        setChatAssistants(assistants);
+      } catch (error) {
+        console.error('Failed to load chat assistants:', error);
+      }
+    };
+
     const loadChatSessions = async () => {
       try {
         const userId = await getCurrentUserId();
@@ -33,28 +43,45 @@ export default function HistoryScreen() {
           return;
         }
 
-        const response = await fetchChatSessions({
-          chatId: CHAT_ID,
-          userId
-        });
-        console.log(response);
-        if (Array.isArray(response)) {
-          const sessions = response.map((session: any) => ({
-            id: session.id,
-            name: session.name,
-            timestamp: session.update_time,
-            lastMessage: session.messages?.length > 0 
-              ? session.messages[session.messages.length - 1].content 
-              : 'No message yet',
-            messages: session.messages,
-          }));
-          console.log(sessions);
-          setChatHistory(sessions);
+        const assistants = await fetchChatAssistants();
+        const allSessions: ChatSession[] = [];
+
+        // Load sessions from all assistants
+        for (const assistant of assistants) {
+          try {
+            const response = await fetchChatSessions({
+              chatId: assistant.id,
+              userId
+            });
+            
+            if (Array.isArray(response)) {
+              const sessions = response.map((session: any) => ({
+                id: session.id,
+                name: session.name,
+                timestamp: session.update_time,
+                lastMessage: session.messages?.length > 0 
+                  ? session.messages[session.messages.length - 1].content 
+                  : 'No message yet',
+                messages: session.messages,
+                chatId: assistant.id, // Add chatId to session
+                assistantName: assistant.name,
+              }));
+              allSessions.push(...sessions);
+            }
+          } catch (error) {
+            console.warn(`Failed to load sessions for ${assistant.name}:`, error);
+          }
         }
+
+        // Sort all sessions by timestamp
+        allSessions.sort((a, b) => b.timestamp - a.timestamp);
+        setChatHistory(allSessions);
       } catch (error) {
         console.error('Failed to load sessions:', error);
       }
     };
+
+    loadChatAssistants();
     loadChatSessions();
   }, []);
 
@@ -94,7 +121,10 @@ export default function HistoryScreen() {
   }, []);
 
   const handleSendMessage = async (userMessage: string) => {
-    if (!currentSession) return;
+    if (!currentSession || !currentSession.chatId) {
+      setShowNoAssistantModal(true);
+      return;
+    }
 
     // Generate unique ID with session prefix and random component
     const userMsgId = `session-${currentSession.id}-user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -114,7 +144,7 @@ export default function HistoryScreen() {
       }
 
       const data = await sendChatMessage({
-        chatId: CHAT_ID,
+        chatId: currentSession.chatId,
         question: userMessage,
         sessionId: currentSession.id,
         userId,
@@ -155,13 +185,15 @@ export default function HistoryScreen() {
   };
 
   const renderItem = ({ item: session }: { item: ChatSession }) => {
-    console.log(session);
     return (
       <TouchableOpacity style={styles.historyItem} onPress={() => handleSessionPress(session)} activeOpacity={0.7}>
         <View style={styles.historyContent}>
           <Text style={styles.bookTitle}>{session.name}</Text>
           <Text style={styles.timestamp}>{formatTimestamp(session.timestamp)}</Text>
         </View>
+        {session.assistantName && (
+          <Text style={styles.assistantName}>{session.assistantName}</Text>
+        )}
         <Text style={styles.lastMessage} numberOfLines={2}>{session.lastMessage}</Text>
       </TouchableOpacity>
     );
@@ -208,10 +240,24 @@ export default function HistoryScreen() {
         onSendMessage={handleSendMessage}
         onSessionCreated={() => {}} // Not needed for existing sessions
         onMessagesUpdate={setMessages}
-        title={currentSession?.name || 'Chat'}
+        title={currentSession?.assistantName || currentSession?.name || 'Chat'}
         subtitle="Continue your conversation"
         messages={messages}
         sessionId={currentSession?.id}
+      />
+
+      {/* No Assistant Modal */}
+      <AlertModal
+        visible={showNoAssistantModal}
+        title="Chat Not Available"
+        message="Sorry, the AI assistant for this conversation is not available at the moment. Please try again later."
+        buttons={[
+          {
+            text: 'OK',
+            onPress: () => setShowNoAssistantModal(false),
+          },
+        ]}
+        onRequestClose={() => setShowNoAssistantModal(false)}
       />
     </SafeAreaView>
   );
@@ -274,6 +320,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'normal',
     color: '#757575',
+  },
+  assistantName: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#3F51B5',
+    marginBottom: 4,
   },
   lastMessage: {
     fontSize: 14,

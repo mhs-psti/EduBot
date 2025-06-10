@@ -13,6 +13,7 @@ export interface ChatSession {
   timestamp: number; // from update_time or create_time
   lastMessage: string;
   messages: ChatMessage[];
+  assistantName?: string;
 }
 
 export interface ReferenceChunk {

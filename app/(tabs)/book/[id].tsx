@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Platform, ScrollView, TouchableOpacity, Image, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Platform, ScrollView, TouchableOpacity, Image, SafeAreaView, Modal } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { ArrowLeft } from 'lucide-react-native';
 import { Document } from '../../../types/document';
 import { ErrorMessage } from '../../../components/ErrorMessage';
 import { LoadingIndicator } from '../../../components/LoadingIndicator';
-import { getDocumentsByDatasetId, fetchImageWithAuth, sendChatMessage } from '../../../utils/api';
+import { AlertModal } from '../../../components/AlertModal';
+import { getDocumentsByDatasetId, fetchImageWithAuth, sendChatMessage, fetchChatAssistants, findChatAssistantByBookName, ChatAssistant } from '../../../utils/api';
 import { formatFileSize } from '../../../utils/app';
 import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import { ChatInterface } from '../../../components/ChatInterface';
@@ -24,7 +25,9 @@ export default function BookDetailScreen() {
   const [isChatVisible, setIsChatVisible] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | undefined>(undefined);
-  const [chatId] = useState('cf90a7b4334611f080d1ea5f1b3df08c');
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [chatAssistant, setChatAssistant] = useState<ChatAssistant | null>(null);
+  const [showNoAssistantModal, setShowNoAssistantModal] = useState(false);
 
   useEffect(() => {
     const loadDocuments = async () => {
@@ -53,6 +56,32 @@ export default function BookDetailScreen() {
   }, [id]);
 
   useEffect(() => {
+    const loadChatAssistant = async () => {
+      if (!name) return;
+      
+      try {
+        const assistants = await fetchChatAssistants();
+        const assistant = findChatAssistantByBookName(name, assistants);
+        
+        if (assistant) {
+          setChatAssistant(assistant);
+          setChatId(assistant.id);
+        } else {
+          console.warn(`No assistant found for book: ${name}`);
+          setChatAssistant(null);
+          setChatId(null);
+        }
+      } catch (error) {
+        console.error('Error loading chat assistant:', error);
+        setChatAssistant(null);
+        setChatId(null);
+      }
+    };
+
+    loadChatAssistant();
+  }, [name]);
+
+  useEffect(() => {
     documents.forEach(async (doc) => {
       if (doc.thumbnail) {
         try {
@@ -69,7 +98,20 @@ export default function BookDetailScreen() {
     });
   }, [documents]);
 
+  const handleChatOpen = () => {
+    if (!chatId) {
+      setShowNoAssistantModal(true);
+      return;
+    }
+    setIsChatVisible(true);
+  };
+
   const handleSendMessage = async (userMessage: string) => {
+    if (!chatId) {
+      console.error('No chat assistant available');
+      return;
+    }
+
     const userMsg = {
       id: Date.now().toString(),
       content: userMessage,
@@ -171,22 +213,38 @@ export default function BookDetailScreen() {
       </ScrollView>
 
       <FloatingActionButton
-        onPress={() => setIsChatVisible(true)}
+        onPress={handleChatOpen}
         title="Ask AI Assistant"
         absolute
       />
 
       {/* Chat Interface */}
-      <ChatInterface
-  visible={isChatVisible}
-  onClose={() => setIsChatVisible(false)}
-  onSendMessage={handleSendMessage}
-        onSessionCreated={setSessionId}
-        onMessagesUpdate={setMessages}
-  title={`${name} Assistant`}
-        messages={messages}
-        sessionId={sessionId}
-/>
+      {chatId && (
+        <ChatInterface
+          visible={isChatVisible}
+          onClose={() => setIsChatVisible(false)}
+          onSendMessage={handleSendMessage}
+          onSessionCreated={setSessionId}
+          onMessagesUpdate={setMessages}
+          title={chatAssistant?.name || `${name} Assistant`}
+          messages={messages}
+          sessionId={sessionId}
+        />
+      )}
+
+      {/* No Assistant Modal */}
+      <AlertModal
+        visible={showNoAssistantModal}
+        title="Chat Not Available"
+        message={`Sorry, there is no AI assistant available for "${name}" at the moment. Please try again later.`}
+        buttons={[
+          {
+            text: 'OK',
+            onPress: () => setShowNoAssistantModal(false),
+          },
+        ]}
+        onRequestClose={() => setShowNoAssistantModal(false)}
+      />
     </SafeAreaView>
   );
 }

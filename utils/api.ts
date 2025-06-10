@@ -315,6 +315,64 @@ export async function fetchRelatedQuestions(question: string): Promise<string[]>
   }
 }
 
+export interface ChatAssistant {
+  id: string;
+  name: string;
+  description: string;
+  datasets: Array<{
+    id: string;
+    name: string;
+    description: string;
+  }>;
+}
+
+export async function fetchChatAssistants(): Promise<ChatAssistant[]> {
+  try {
+    const response = await fetch(`${API_URL}/api/v1/chats`, {
+      headers: HEADERS,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch chat assistants: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.code === 0 && Array.isArray(data.data)) {
+      return data.data.map((chat: any) => ({
+        id: chat.id,
+        name: chat.name,
+        description: chat.description,
+        datasets: chat.datasets || [],
+      }));
+    } else {
+      console.error('Invalid response format:', data);
+      return [];
+    }
+  } catch (error) {
+    console.error('Error fetching chat assistants:', error);
+    return [];
+  }
+}
+
+export function findChatAssistantByBookName(bookName: string, assistants: ChatAssistant[]): ChatAssistant | null {
+  // Try to find exact match with "Assistant" suffix
+  const assistantName = `${bookName} Assistant`;
+  let assistant = assistants.find(a => a.name === assistantName);
+  
+  if (assistant) {
+    return assistant;
+  }
+  
+  // Try to find by partial match
+  assistant = assistants.find(a => 
+    a.name.toLowerCase().includes(bookName.toLowerCase()) ||
+    bookName.toLowerCase().includes(a.name.toLowerCase().replace(' assistant', ''))
+  );
+  
+  return assistant || null;
+}
+
 export async function fetchDocumentChunks({
   datasetId,
   documentId,
