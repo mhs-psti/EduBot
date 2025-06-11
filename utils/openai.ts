@@ -19,7 +19,7 @@ const openai = new OpenAI({
 export async function generateDocumentSummary(content: string): Promise<string> {
   try {
     const completion = await openai.chat.completions.create({
-      model: "google/gemini-2.5-pro-preview",
+      model: "openai/gpt-4o-2024-11-20",
       messages: [
         {
           role: "user",
@@ -54,7 +54,7 @@ export async function generateDocumentSummary(content: string): Promise<string> 
 export async function generateShortSessionName(userMessage: string): Promise<string> {
   try {
     const completion = await openai.chat.completions.create({
-      model: "google/gemini-2.5-pro-preview",
+      model: "openai/gpt-4o-2024-11-20",
       messages: [
         {
           role: "system",
@@ -101,4 +101,123 @@ Respond with ONLY the session name:`,
     // Fallback to a simple name
     return userMessage;
   }
+}
+
+/**
+ * Generate quiz questions based on document summary using OpenRouter's JSON schema
+ * @param summary - The document summary to create quiz from
+ * @returns Promise<QuizQuestion[]> - Array of generated quiz questions
+ */
+export async function generateQuizQuestions(summary: string): Promise<QuizQuestion[]> {
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${process.env.EXPO_PUBLIC_OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+        "HTTP-Referer": process.env.EXPO_PUBLIC_SITE_URL || "",
+        "X-Title": process.env.EXPO_PUBLIC_SITE_NAME || "",
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-4o-2024-11-20',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an educational quiz generator. Create exactly 5 multiple choice questions in Bahasa Indonesia based on the provided document summary. Each question must test understanding of key concepts from the content. Questions should be a mix of factual and conceptual. Each question must have exactly 4 plausible options with only one correct answer.'
+          },
+          {
+            role: 'user',
+            content: `Generate 5 multiple choice questions from this document summary:
+
+${summary}
+
+Requirements:
+- All text in Bahasa Indonesia
+- Questions should test understanding of key concepts
+- Mix of factual and conceptual questions  
+- Options should be plausible but only one correct
+- Ensure questions cover different aspects of the content`
+          }
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'quiz_questions',
+            strict: true,
+            schema: {
+              type: 'object',
+              properties: {
+                questions: {
+                  type: 'array',
+                  description: 'Array of exactly 5 quiz questions',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      question: {
+                        type: 'string',
+                        description: 'The quiz question text in Bahasa Indonesia'
+                      },
+                      options: {
+                        type: 'array',
+                        description: 'Exactly 4 multiple choice options',
+                        items: {
+                          type: 'string'
+                        },
+                        minItems: 4,
+                        maxItems: 4
+                      },
+                      correctAnswer: {
+                        type: 'integer',
+                        description: 'Index of the correct answer (0-3)',
+                        minimum: 0,
+                        maximum: 3
+                      }
+                    },
+                    required: ['question', 'options', 'correctAnswer'],
+                    additionalProperties: false
+                  },
+                  minItems: 5,
+                  maxItems: 5
+                }
+              },
+              required: ['questions'],
+              additionalProperties: false
+            }
+          }
+        },
+        temperature: 0.3,
+        max_completion_tokens: 4500
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenRouter API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content;
+    
+    if (!content) {
+      throw new Error('No quiz questions generated');
+    }
+
+    // Parse the JSON response
+    const parsedQuestions = JSON.parse(content);
+    
+    if (!parsedQuestions.questions || !Array.isArray(parsedQuestions.questions)) {
+      throw new Error('Invalid quiz questions format');
+    }
+
+    return parsedQuestions.questions;
+  } catch (error) {
+    console.error('Error generating quiz questions:', error);
+    throw error;
+  }
+}
+
+// Type definition for quiz questions
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correctAnswer: number;
 } 

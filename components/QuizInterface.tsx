@@ -1,78 +1,117 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, SafeAreaView } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
-
-// Sample quiz questions - in a real app, these would be generated from the book content or passed as props
-const quizQuestions = [
-  {
-    question: "Apa yang dimaksud dengan Pancasila?",
-    options: [
-      "Lima dasar negara Indonesia",
-      "Empat pilar bangsa",
-      "Tiga prinsip utama",
-      "Enam nilai luhur"
-    ],
-    correctAnswer: 0
-  },
-  {
-    question: "Sila pertama Pancasila adalah?",
-    options: [
-      "Kemanusiaan yang adil dan beradab",
-      "Ketuhanan Yang Maha Esa",
-      "Persatuan Indonesia",
-      "Kerakyatan yang dipimpin oleh hikmat"
-    ],
-    correctAnswer: 1
-  },
-  {
-    question: "Lambang sila kedua Pancasila adalah?",
-    options: [
-      "Bintang",
-      "Rantai",
-      "Pohon beringin",
-      "Kepala banteng"
-    ],
-    correctAnswer: 1
-  },
-  {
-    question: "Apa makna dari sila ketiga Pancasila?",
-    options: [
-      "Persatuan dan kesatuan bangsa",
-      "Keadilan sosial",
-      "Demokrasi",
-      "Toleransi beragama"
-    ],
-    correctAnswer: 0
-  },
-  {
-    question: "Pancasila ditetapkan sebagai dasar negara pada tanggal?",
-    options: [
-      "17 Agustus 1945",
-      "18 Agustus 1945",
-      "1 Juni 1945",
-      "22 Juni 1945"
-    ],
-    correctAnswer: 1
-  }
-];
+import { supabase } from '../utils/app';
+import { generateQuizQuestions, QuizQuestion } from '../utils/openai';
 
 interface QuizInterfaceProps {
   visible: boolean;
   onClose: () => void;
   bookName?: string;
-  questions?: typeof quizQuestions; // Allow custom questions to be passed
+  documentId?: string; // For saving/loading quiz questions from summaries
 }
 
 export const QuizInterface: React.FC<QuizInterfaceProps> = ({
   visible,
   onClose,
   bookName = "Book",
-  questions = quizQuestions
+  documentId
 }) => {
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+  const [questionsError, setQuestionsError] = useState<string | null>(null);
+  const [generateLoading, setGenerateLoading] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<number[]>([]);
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [quizScore, setQuizScore] = useState(0);
+
+  // Load quiz questions when component becomes visible
+  useEffect(() => {
+    if (visible && documentId) {
+      loadQuizQuestions();
+    }
+  }, [visible, documentId]);
+
+  const loadQuizQuestions = async () => {
+    setQuestionsLoading(true);
+    setQuestionsError(null);
+    setQuestions([]);
+
+    try {
+      const { data, error } = await supabase
+        .from('quiz_questions')
+        .select('questions')
+        .eq('document_id', documentId)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116' || error.code === '406') {
+          // Not found, allow generation
+          setQuestionsError('No quiz questions found. You can generate them.');
+        } else {
+          setQuestionsError('Failed to load quiz questions');
+        }
+        setQuestions([]);
+      } else {
+        const loadedQuestions = data?.questions || [];
+        setQuestions(loadedQuestions);
+        setQuestionsError(null);
+      }
+    } catch (e) {
+      console.error('Error loading quiz questions:', e);
+      setQuestionsError('Failed to load quiz questions');
+      setQuestions([]);
+    } finally {
+      setQuestionsLoading(false);
+    }
+  };
+
+  const handleGenerateQuestions = async () => {
+    if (!documentId) {
+      setQuestionsError('Missing document ID');
+      return;
+    }
+
+    setGenerateLoading(true);
+    setQuestionsError(null);
+
+    try {
+      // 1. Fetch document summary from summaries table
+      const { data, error } = await supabase
+        .from('summaries')
+        .select('summary')
+        .eq('document_id', documentId)
+        .single();
+
+      if (error || !data?.summary) {
+        setQuestionsError(error?.code === 'PGRST116' || error?.code === '406' 
+          ? "No document summary found. Please generate a summary first." 
+          : "Failed to fetch document summary");
+        return;
+      }
+
+      // 2. Generate quiz questions from summary using OpenAI
+      const generatedQuestions = await generateQuizQuestions(data.summary);
+
+      // 3. Save questions to Supabase
+      const { error: saveError } = await supabase
+        .from("quiz_questions")
+        .insert([{ document_id: documentId, questions: generatedQuestions }]);
+
+      if (saveError) {
+        setQuestionsError("Failed to save quiz questions");
+        return;
+      }
+
+      setQuestions(generatedQuestions);
+      setQuestionsError(null);
+    } catch (e: any) {
+      setQuestionsError(e.message || "Failed to generate quiz questions");
+    } finally {
+      setGenerateLoading(false);
+    }
+  };
 
   const handleAnswerSelect = (answerIndex: number) => {
     const newAnswers = [...selectedAnswers];
@@ -125,7 +164,41 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
           <Text style={styles.quizTitle}>Quiz: {bookName}</Text>
         </View>
 
-        {!quizCompleted ? (
+        {questionsLoading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.loadingText}>Loading quiz questions...</Text>
+          </View>
+        ) : questionsError && (questionsError.includes('generate them') || questionsError.includes('summary found')) ? (
+          <View style={styles.generateContainer}>
+            <Text style={styles.generateText}>{questionsError}</Text>
+            {questionsError.includes('summary found') ? (
+              <Text style={styles.instructionText}>
+                Please go to the document preview and generate a summary first, then come back to create quiz questions.
+              </Text>
+            ) : (
+              <TouchableOpacity 
+                onPress={handleGenerateQuestions} 
+                disabled={generateLoading} 
+                style={[styles.generateBtn, generateLoading && { opacity: 0.6 }]}
+              >
+                <Text style={styles.generateBtnText}>
+                  {generateLoading ? 'Generating Questions...' : 'Generate Quiz Questions'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : questionsError ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{questionsError}</Text>
+            <TouchableOpacity onPress={loadQuizQuestions} style={styles.retryBtn}>
+              <Text style={styles.retryBtnText}>Try Again</Text>
+            </TouchableOpacity>
+          </View>
+        ) : questions.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No quiz questions available</Text>
+          </View>
+        ) : !quizCompleted ? (
           <ScrollView style={styles.quizContent}>
             <View style={styles.progressContainer}>
               <Text style={styles.progressText}>
@@ -146,7 +219,7 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
             </Text>
 
             <View style={styles.optionsContainer}>
-              {questions[currentQuestionIndex].options.map((option, index) => (
+              {questions[currentQuestionIndex].options.map((option: string, index: number) => (
                 <TouchableOpacity
                   key={index}
                   style={[
@@ -369,5 +442,90 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontFamily: 'System',
     fontWeight: '600',
+  },
+  // Loading, error, and generation states
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'System',
+    color: '#757575',
+    textAlign: 'center',
+  },
+  generateContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  generateText: {
+    fontSize: 16,
+    fontFamily: 'System',
+    color: '#212121',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  instructionText: {
+    fontSize: 14,
+    fontFamily: 'System',
+    color: '#757575',
+    textAlign: 'center',
+    fontStyle: 'italic',
+    lineHeight: 20,
+  },
+  generateBtn: {
+    backgroundColor: '#3F51B5',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  generateBtnText: {
+    color: '#FFFFFF',
+    fontFamily: 'System',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'System',
+    color: '#F44336',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryBtn: {
+    backgroundColor: '#757575',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+  },
+  retryBtnText: {
+    color: '#FFFFFF',
+    fontFamily: 'System',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyText: {
+    fontSize: 16,
+    fontFamily: 'System',
+    color: '#757575',
+    textAlign: 'center',
   },
 }); 

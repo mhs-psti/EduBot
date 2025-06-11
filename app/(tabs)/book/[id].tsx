@@ -286,6 +286,7 @@ export default function BookDetailScreen() {
         visible={isQuizVisible}
         onClose={() => setIsQuizVisible(false)}
         bookName={name}
+        documentId={documents[0]?.id} // Use first document ID as representative
       />
     </SafeAreaView>
   );
