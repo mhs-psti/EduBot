@@ -152,6 +152,7 @@ const styles = StyleSheet.create({
   docName: {
     fontWeight: 'bold',
     fontSize: 16,
+    fontFamily: 'System',
     marginBottom: 8,
   },
   scrollContent: {
@@ -162,6 +163,7 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 16,
     fontWeight: 'bold',
+    fontFamily: 'System',
     color: '#212121',
     marginTop: 8,
     marginBottom: 4,
@@ -169,12 +171,14 @@ const styles = StyleSheet.create({
   paragraph: {
     fontSize: 15,
     lineHeight: 22,
+    fontFamily: 'System',
     color: '#212121',
     marginBottom: 4,
   },
   numberedList: {
     fontSize: 15,
     lineHeight: 22,
+    fontFamily: 'System',
     color: '#212121',
     marginBottom: 4,
     fontWeight: '500',
@@ -182,15 +186,18 @@ const styles = StyleSheet.create({
   letteredList: {
     fontSize: 15,
     lineHeight: 22,
+    fontFamily: 'System',
     color: '#212121',
     marginBottom: 2,
     marginLeft: 16,
   },
   boldText: {
     fontWeight: 'bold',
+    fontFamily: 'System',
   },
   pageMarker: {
     fontSize: 13,
+    fontFamily: 'System',
     color: '#757575',
     fontStyle: 'italic',
     textAlign: 'center',
@@ -203,6 +210,7 @@ const styles = StyleSheet.create({
     marginTop: 12,
     color: '#3F51B5',
     fontWeight: '600',
+    fontFamily: 'System',
     textAlign: 'right',
     fontSize: 14,
   },
