@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Platform, ScrollView, TouchableOpacity, Image, SafeAreaView, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
-import { ArrowLeft } from 'lucide-react-native';
+import { ArrowLeft, MessageCircle, FileQuestion, X } from 'lucide-react-native';
 import { Document } from '../../../types/document';
 import { ErrorMessage } from '../../../components/ErrorMessage';
 import { LoadingIndicator } from '../../../components/LoadingIndicator';
 import { AlertModal } from '../../../components/AlertModal';
 import { getDocumentsByDatasetId, fetchImageWithAuth, sendChatMessage, fetchChatAssistants, findChatAssistantByBookName, ChatAssistant } from '../../../utils/api';
 import { formatFileSize } from '../../../utils/app';
-import { FloatingActionButton } from '../../../components/FloatingActionButton';
 import { ChatInterface } from '../../../components/ChatInterface';
+import { QuizInterface } from '../../../components/QuizInterface';
 import { getCurrentUserId } from '../../../utils/auth';
 import { ChatMessage } from '@/types/chat';
 
@@ -28,6 +28,8 @@ export default function BookDetailScreen() {
   const [chatId, setChatId] = useState<string | null>(null);
   const [chatAssistant, setChatAssistant] = useState<ChatAssistant | null>(null);
   const [showNoAssistantModal, setShowNoAssistantModal] = useState(false);
+  const [showFloatingMenu, setShowFloatingMenu] = useState(false);
+  const [isQuizVisible, setIsQuizVisible] = useState(false);
 
   useEffect(() => {
     const loadDocuments = async () => {
@@ -103,7 +105,13 @@ export default function BookDetailScreen() {
       setShowNoAssistantModal(true);
       return;
     }
+    setShowFloatingMenu(false);
     setIsChatVisible(true);
+  };
+
+  const handleQuizOpen = () => {
+    setShowFloatingMenu(false);
+    setIsQuizVisible(true);
   };
 
   const handleSendMessage = async (userMessage: string) => {
@@ -212,11 +220,37 @@ export default function BookDetailScreen() {
         ))}
       </ScrollView>
 
-      <FloatingActionButton
-        onPress={handleChatOpen}
-        title="Ask AI Assistant"
-        absolute
-      />
+      {/* Floating Action Menu */}
+      <View style={styles.floatingMenu}>
+        {showFloatingMenu && (
+          <View style={styles.menuOptions}>
+            <TouchableOpacity
+              style={styles.menuOption}
+              onPress={handleChatOpen}
+            >
+              <MessageCircle size={20} color="#FFFFFF" />
+              <Text style={styles.menuOptionText}>Ask AI</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.menuOption}
+              onPress={handleQuizOpen}
+            >
+              <FileQuestion size={20} color="#FFFFFF" />
+              <Text style={styles.menuOptionText}>Take Quiz</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+        <TouchableOpacity
+          style={styles.mainFab}
+          onPress={() => setShowFloatingMenu(!showFloatingMenu)}
+        >
+          {showFloatingMenu ? (
+            <X size={24} color="#FFFFFF" />
+          ) : (
+            <Text style={styles.fabText}>📚</Text>
+          )}
+        </TouchableOpacity>
+      </View>
 
       {/* Chat Interface */}
       {chatId && (
@@ -244,7 +278,14 @@ export default function BookDetailScreen() {
             onPress: () => setShowNoAssistantModal(false),
           },
         ]}
-        onRequestClose={() => setShowNoAssistantModal(false)}
+        onRequestClose={() => setShowNoAssistantModal(false        )}
+      />
+
+      {/* Quiz Interface */}
+      <QuizInterface
+        visible={isQuizVisible}
+        onClose={() => setIsQuizVisible(false)}
+        bookName={name}
       />
     </SafeAreaView>
   );
@@ -306,5 +347,50 @@ const styles = StyleSheet.create({
   docMeta: {
     fontSize: 13,
     color: '#757575',
+  },
+  // Floating Menu Styles
+  floatingMenu: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    alignItems: 'center',
+  },
+  menuOptions: {
+    marginBottom: 10,
+  },
+  menuOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#3F51B5',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 25,
+    marginBottom: 8,
+    minWidth: 120,
+  },
+  menuOptionText: {
+    color: '#FFFFFF',
+    fontFamily: 'System',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  mainFab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#3F51B5',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+  },
+  fabText: {
+    fontSize: 24,
   },
 });
