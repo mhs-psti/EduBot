@@ -4,7 +4,9 @@ import {
   Text, 
   StyleSheet, 
   TouchableOpacity, 
-  Platform 
+  Platform,
+  Modal,
+  TouchableWithoutFeedback
 } from 'react-native';
 import { ChevronDown, ChevronUp } from 'lucide-react-native';
 import Animated, {
@@ -26,26 +28,49 @@ export const ClassLevelFilter: React.FC<ClassLevelFilterProps> = ({
   onSelectLevel,
 }) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const dropdownHeight = useSharedValue(0);
+  const [buttonLayout, setButtonLayout] = React.useState({ x: 0, y: 0, width: 160, height: 48 });
+  const dropdownOpacity = useSharedValue(0);
+  const dropdownScale = useSharedValue(0.95);
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
-    dropdownHeight.value = withTiming(
-      isOpen ? 0 : levels.length * 48,
-      {
-        duration: 300,
+    if (!isOpen) {
+      // Opening animation
+      dropdownOpacity.value = withTiming(1, {
+        duration: 200,
         easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-      }
-    );
+      });
+      dropdownScale.value = withTiming(1, {
+        duration: 200,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    } else {
+      // Closing animation
+      dropdownOpacity.value = withTiming(0, {
+        duration: 150,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+      dropdownScale.value = withTiming(0.95, {
+        duration: 150,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+    }
   };
 
   const dropdownStyle = useAnimatedStyle(() => {
     return {
-      height: dropdownHeight.value,
-      opacity: dropdownHeight.value === 0 ? 0 : 1,
-      overflow: 'hidden',
+      opacity: dropdownOpacity.value,
+      transform: [
+        { scale: dropdownScale.value },
+        { translateY: -2 }
+      ],
     };
   });
+
+  const handleButtonLayout = (event: any) => {
+    const { x, y, width, height } = event.nativeEvent.layout;
+    setButtonLayout({ x, y, width, height });
+  };
 
   return (
     <View style={styles.container}>
@@ -53,6 +78,7 @@ export const ClassLevelFilter: React.FC<ClassLevelFilterProps> = ({
         style={styles.button} 
         onPress={toggleDropdown}
         activeOpacity={0.7}
+        onLayout={handleButtonLayout}
       >
         <Text style={styles.buttonText}>
           {selectedLevel === 'All' ? 'All Classes' : `Class ${selectedLevel}`}
@@ -64,30 +90,80 @@ export const ClassLevelFilter: React.FC<ClassLevelFilterProps> = ({
         )}
       </TouchableOpacity>
 
-      <Animated.View style={[styles.dropdown, dropdownStyle]}>
-        {levels.map((level) => (
-          <TouchableOpacity
-            key={level}
-            style={[
-              styles.dropdownItem,
-              selectedLevel === level && styles.selectedItem,
-            ]}
-            onPress={() => {
-              onSelectLevel(level);
-              toggleDropdown();
-            }}
-          >
-            <Text 
+      {/* Modal approach for guaranteed top stacking */}
+      <Modal
+        visible={isOpen}
+        transparent={true}
+        animationType="none"
+        onRequestClose={toggleDropdown}
+      >
+        <TouchableWithoutFeedback onPress={toggleDropdown}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <Animated.View style={[
+                styles.modalDropdown, 
+                dropdownStyle,
+                {
+                  top: buttonLayout.y + buttonLayout.height + 4,
+                  left: buttonLayout.x,
+                  width: buttonLayout.width,
+                }
+              ]}>
+                {levels.map((level) => (
+                  <TouchableOpacity
+                    key={level}
+                    style={[
+                      styles.dropdownItem,
+                      selectedLevel === level && styles.selectedItem,
+                    ]}
+                    onPress={() => {
+                      onSelectLevel(level);
+                      toggleDropdown();
+                    }}
+                  >
+                    <Text 
+                      style={[
+                        styles.dropdownItemText,
+                        selectedLevel === level && styles.selectedItemText,
+                      ]}
+                    >
+                      {level === 'All' ? 'All Classes' : `Class ${level}`}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </Animated.View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Fallback absolute positioning (if Modal doesn't work well) */}
+      {/* {isOpen && (
+        <Animated.View style={[styles.dropdown, dropdownStyle]}>
+          {levels.map((level) => (
+            <TouchableOpacity
+              key={level}
               style={[
-                styles.dropdownItemText,
-                selectedLevel === level && styles.selectedItemText,
+                styles.dropdownItem,
+                selectedLevel === level && styles.selectedItem,
               ]}
+              onPress={() => {
+                onSelectLevel(level);
+                toggleDropdown();
+              }}
             >
-              {level === 'All' ? 'All Classes' : `Class ${level}`}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </Animated.View>
+              <Text 
+                style={[
+                  styles.dropdownItemText,
+                  selectedLevel === level && styles.selectedItemText,
+                ]}
+              >
+                {level === 'All' ? 'All Classes' : `Class ${level}`}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </Animated.View>
+      )} */}
     </View>
   );
 };
@@ -96,6 +172,8 @@ const styles = StyleSheet.create({
   container: {
     width: 160,
     marginRight: 16,
+    position: 'relative',
+    zIndex: 9999,
   },
   button: {
     flexDirection: 'row',
@@ -113,23 +191,50 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#3F51B5',
   },
-    dropdown: {
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  modalDropdown: {
+    position: 'absolute',
     backgroundColor: '#FFFFFF',
     borderRadius: 8,
-    marginTop: 4,
-    overflow: 'hidden', // tambahkan untuk jaga-jaga
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
       },
       android: {
-        elevation: 3,
+        elevation: 20,
       },
       web: {
-        boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)',
+        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
+      },
+    }),
+  },
+  dropdown: {
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 8,
+    marginTop: 4,
+    zIndex: 10000,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 20,
+      },
+      web: {
+        boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.15)',
       },
     }),
   },
