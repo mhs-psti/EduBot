@@ -104,8 +104,8 @@ export default function ProfileScreen() {
   };
 
   const userData = {
-    name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-    email: user.email
+    name: user?.email.split('@')[0] || 'User',
+    email: user?.email
   };
 
   if (loading) {
