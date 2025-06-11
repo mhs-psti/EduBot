@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { Dataset } from '../types/dataset';
+import { extractClassFromName } from '../utils/classExtractor';
 
 interface BookCardProps {
   book: Dataset;
@@ -25,6 +26,8 @@ export const BookCard: React.FC<BookCardProps> = ({ book }) => {
       params: { id: book.id, name: book.name }
     });
   };
+
+  const bookClass = extractClassFromName(book.name);
 
   return (
     <TouchableOpacity
@@ -43,7 +46,7 @@ export const BookCard: React.FC<BookCardProps> = ({ book }) => {
         </View>
         <View style={styles.contentContainer}>
           <Text style={styles.title} numberOfLines={2}>{book.name}</Text>
-          <Text style={styles.subject}>{book.language}</Text>
+          <Text style={styles.classLevel}>{bookClass}</Text>
           <Text style={styles.description} numberOfLines={2}>
             {book.description || 'No description'}
           </Text>
@@ -105,7 +108,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     color: '#212121',
   },
-  subject: {
+  classLevel: {
     fontSize: 14,
     color: '#3F51B5',
     fontWeight: '500',

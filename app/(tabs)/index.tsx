@@ -1,205 +1,312 @@
-import React, { useState, useEffect } from 'react';
-import { 
+import React, { useEffect, useState, useMemo } from 'react';
+import {
   View, 
   Text, 
   StyleSheet, 
-  ScrollView, 
-  SafeAreaView, 
   TextInput, 
+  ScrollView,
+  SafeAreaView, 
   TouchableOpacity,
-  Dimensions 
+  ActivityIndicator,
+  FlatList,
+  Dimensions
 } from 'react-native';
 import { 
   Search, 
-  BookOpen, 
-  MessageSquare, 
-  Clock, 
-  TrendingUp,
-  Zap,
+  Filter, 
+  Grid, 
+  List, 
+  BookOpen,
   Users,
-  Award
+  Clock,
+  Star 
 } from 'lucide-react-native';
-import { router } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { BookCard } from '../../components/BookCard';
-import { books } from '../../data/books';
+import { ClassLevelFilter } from '../../components/ClassLevelFilter';
+import { EmptyState } from '../../components/EmptyState';
+import { fetchDatasets } from '../../utils/api';
+import { Dataset } from '../../types/dataset';
+import { extractClassLevel, getUniqueClassLevels } from '../../utils/classExtractor';
 
-const { width } = Dimensions.get('window');
+const getNumColumns = (viewMode: 'grid' | 'list', screenWidth: number) => {
+  if (viewMode === 'list') return 1;
+  if (screenWidth >= 1200) return 3; // Very large screens - 3 columns max for better spacing
+  if (screenWidth >= 768) return 3;  // Tablets - 3 columns
+  return 2; // Phones - 2 columns
+};
 
-export default function HomeScreen() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [recentBooks] = useState(books.slice(0, 3)); // Recently viewed books
-  const [greeting, setGreeting] = useState('');
+const getItemSpacing = (screenWidth: number) => {
+  if (screenWidth >= 1024) return 24;
+  if (screenWidth >= 768) return 20;
+  return 16;
+};
 
+export default function LibraryScreen() {
+  const params = useLocalSearchParams();
+  const [searchQuery, setSearchQuery] = useState((params.search as string) || '');
+  const [selectedLevel, setSelectedLevel] = useState('All');
+  const [books, setBooks] = useState<Dataset[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [screenData, setScreenData] = useState(Dimensions.get('window'));
+
+  // Dynamic levels based on actual book data
+  const levels = useMemo(() => {
+    return getUniqueClassLevels(books);
+  }, [books]);
+
+  // Listen to screen dimension changes
   useEffect(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) {
-      setGreeting('Selamat Pagi');
-    } else if (hour < 17) {
-      setGreeting('Selamat Siang');
-    } else {
-      setGreeting('Selamat Malam');
-    }
+    const subscription = Dimensions.addEventListener('change', ({ window }) => {
+      setScreenData(window);
+    });
+    return () => subscription?.remove();
   }, []);
 
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      router.push({
-        pathname: '/library',
-        params: { search: searchQuery }
-      });
+  // Calculate responsive values based on current screen size
+  const responsiveValues = useMemo(() => {
+    const currentWidth = screenData.width;
+    const spacing = getItemSpacing(currentWidth);
+    const numColumns = getNumColumns(viewMode, currentWidth);
+    
+    // Better spacing calculation for large screens
+    const totalHorizontalSpacing = spacing * 2; // Left and right padding
+    const gapBetweenItems = spacing * 0.8; // Gap between items (slightly smaller than padding)
+    const totalGaps = (numColumns - 1) * gapBetweenItems;
+    
+    const itemWidth = viewMode === 'list' 
+      ? currentWidth - totalHorizontalSpacing
+      : (currentWidth - totalHorizontalSpacing - totalGaps) / numColumns;
+    
+    const isPhone = currentWidth < 768;
+    const isTablet = currentWidth >= 768 && currentWidth < 1024;
+    const isLargeScreen = currentWidth >= 1024;
+    
+    return {
+      numColumns,
+      spacing,
+      itemWidth,
+      gapBetweenItems,
+      isPhone,
+      isTablet,
+      isLargeScreen,
+      screenWidth: currentWidth,
+      // Dynamic font sizes
+      headerFontSize: isLargeScreen ? 36 : isTablet ? 32 : 28,
+      searchHeight: isLargeScreen ? 56 : isTablet ? 52 : 48,
+      // Dynamic padding
+      horizontalPadding: isLargeScreen ? 48 : isTablet ? 40 : 20,
+      verticalPadding: isLargeScreen ? 28 : isTablet ? 24 : 20,
+    };
+  }, [screenData.width, viewMode]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const response = await fetchDatasets();
+        if (Array.isArray(response?.data)) {
+          setBooks(response.data);
+        } else {
+          console.warn("API response is not an array", response);
+          setBooks([]);
+        }
+      } catch (err) {
+        console.error('Error loading datasets:', err);
+        setBooks([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    loadData();
+  }, []);
+
+  const filteredBooks = useMemo(() => {
+    return books.filter((book) => {
+      const matchesSearch =
+        book.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (book.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Filter by class level extracted from book name
+      const bookClassLevel = extractClassLevel(book.name);
+      const matchesClass = selectedLevel === 'All' || bookClassLevel === selectedLevel;
+
+      return matchesSearch && matchesClass;
+    });
+  }, [books, searchQuery, selectedLevel]);
+
+  const renderBookItem = ({ item, index }: { item: Dataset; index: number }) => {
+    const { numColumns, gapBetweenItems, itemWidth } = responsiveValues;
+    
+    // Calculate position in row
+    const columnIndex = index % numColumns;
+    const isFirstInRow = columnIndex === 0;
+    const isLastInRow = columnIndex === numColumns - 1;
+    
+    // Better margin calculation for consistent spacing
+    let marginLeft = 0;
+    let marginRight = 0;
+    
+    if (numColumns > 1) {
+      if (isFirstInRow) {
+        marginRight = gapBetweenItems / 2;
+      } else if (isLastInRow) {
+        marginLeft = gapBetweenItems / 2;
+      } else {
+        marginLeft = gapBetweenItems / 2;
+        marginRight = gapBetweenItems / 2;
+      }
     }
+    
+    return (
+      <View style={[
+        viewMode === 'grid' ? styles.gridItem : styles.listItem,
+        {
+          width: itemWidth,
+          marginLeft,
+          marginRight,
+          marginBottom: responsiveValues.spacing * 0.8, // Consistent vertical spacing
+        }
+      ]}>
+        <BookCard book={item} />
+      </View>
+    );
   };
 
-  const statsData = [
-    { icon: BookOpen, label: 'Books Read', value: '12', color: '#3F51B5' },
-    { icon: MessageSquare, label: 'AI Chats', value: '28', color: '#FF9800' },
-    { icon: Clock, label: 'Study Hours', value: '45h', color: '#4CAF50' },
-    { icon: Award, label: 'Completed', value: '8', color: '#9C27B0' },
-  ];
-
-  const quickActions = [
-    {
-      icon: Search,
-      title: 'Find Books',
-      subtitle: 'Search library',
-      color: '#3F51B5',
-      onPress: () => router.push('/library')
-    },
-    {
-      icon: MessageSquare,
-      title: 'AI Assistant',
-      subtitle: 'Ask questions',
-      color: '#FF9800',
-      onPress: () => router.push('/history')
-    },
-    {
-      icon: TrendingUp,
-      title: 'Progress',
-      subtitle: 'View stats',
-      color: '#4CAF50',
-      onPress: () => {} // Could implement progress screen
-    },
-    {
-      icon: Users,
-      title: 'Study Groups',
-      subtitle: 'Join others',
-      color: '#9C27B0',
-      onPress: () => {} // Could implement study groups
-    },
-  ];
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#3F51B5" />
+          <Text style={styles.loadingText}>Loading library...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        {/* Header with greeting */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Text style={styles.greeting}>{greeting}! 👋</Text>
-            <Text style={styles.subtitle}>Ready to learn something new?</Text>
-          </View>
-          <View style={styles.headerIcon}>
-            <Zap size={24} color="#FF9800" />
+      {/* Header */}
+      <View style={[
+        styles.header, 
+        responsiveValues.isTablet && styles.headerTablet,
+        responsiveValues.isLargeScreen && styles.headerLargeScreen,
+        { paddingHorizontal: responsiveValues.horizontalPadding }
+      ]}>
+        <View style={styles.headerTop}>
+          <Text style={[
+            styles.headerTitle, 
+            { fontSize: responsiveValues.headerFontSize }
+          ]}>
+            Library
+          </Text>
+          <View style={styles.viewToggle}>
+            <TouchableOpacity
+              style={[styles.viewButton, viewMode === 'grid' && styles.activeViewButton]}
+              onPress={() => setViewMode('grid')}
+            >
+              <Grid size={responsiveValues.isLargeScreen ? 20 : 18} color={viewMode === 'grid' ? '#FFFFFF' : '#757575'} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.viewButton, viewMode === 'list' && styles.activeViewButton]}
+              onPress={() => setViewMode('list')}
+            >
+              <List size={responsiveValues.isLargeScreen ? 20 : 18} color={viewMode === 'list' ? '#FFFFFF' : '#757575'} />
+            </TouchableOpacity>
           </View>
         </View>
 
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <Search size={20} color="#757575" style={styles.searchIcon} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search books, topics, or ask AI..."
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={handleSearch}
-              placeholderTextColor="#9E9E9E"
+        {/* Search */}
+        <View style={[
+          styles.searchContainer, 
+          { 
+            height: responsiveValues.searchHeight,
+            borderRadius: responsiveValues.isLargeScreen ? 16 : 12,
+            paddingHorizontal: responsiveValues.isLargeScreen ? 24 : 16 
+          }
+        ]}>
+          <Search size={responsiveValues.isLargeScreen ? 22 : 20} color="#757575" style={styles.searchIcon} />
+          <TextInput
+            placeholder="Search books by name or description..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={[
+              styles.searchInput,
+              { fontSize: responsiveValues.isLargeScreen ? 18 : 16 }
+            ]}
+            placeholderTextColor="#9E9E9E"
+          />
+        </View>
+      </View>
+
+      {/* Filters */}
+      <View style={styles.filtersSection}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[
+          styles.filtersScroll,
+          { 
+            paddingHorizontal: responsiveValues.horizontalPadding,
+            paddingVertical: responsiveValues.verticalPadding 
+          }
+        ]}>
+          <View style={styles.filterGroup}>
+            <ClassLevelFilter
+              selectedLevel={selectedLevel}
+              levels={levels}
+              onSelectLevel={setSelectedLevel}
             />
           </View>
-          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-            <Search size={18} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
+      </View>
 
-        {/* Stats Overview */}
-        <View style={styles.statsContainer}>
-          <Text style={styles.sectionTitle}>Your Learning Journey</Text>
-          <View style={styles.statsGrid}>
-            {statsData.map((stat, index) => {
-              const IconComponent = stat.icon;
-              return (
-                <View key={index} style={styles.statCard}>
-                  <View style={[styles.statIcon, { backgroundColor: `${stat.color}15` }]}>
-                    <IconComponent size={20} color={stat.color} />
-                  </View>
-                  <Text style={styles.statValue}>{stat.value}</Text>
-                  <Text style={styles.statLabel}>{stat.label}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.actionsContainer}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
-          <View style={styles.actionsGrid}>
-            {quickActions.map((action, index) => {
-              const IconComponent = action.icon;
-              return (
-                <TouchableOpacity 
-                  key={index} 
-                  style={styles.actionCard}
-                  onPress={action.onPress}
-                  activeOpacity={0.7}
-                >
-                  <View style={[styles.actionIcon, { backgroundColor: action.color }]}>
-                    <IconComponent size={20} color="#FFFFFF" />
-                  </View>
-                  <Text style={styles.actionTitle}>{action.title}</Text>
-                  <Text style={styles.actionSubtitle}>{action.subtitle}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Continue Reading */}
-        {recentBooks.length > 0 && (
-          <View style={styles.recentContainer}>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Continue Reading</Text>
-              <TouchableOpacity onPress={() => router.push('/library')}>
-                <Text style={styles.seeAllText}>See All</Text>
-              </TouchableOpacity>
-            </View>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.recentScrollContent}
-            >
-              {recentBooks.map((book) => (
-                <View key={book.id} style={styles.recentBookCard}>
-                  <BookCard book={book} />
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* Daily Tip */}
-        <View style={styles.tipContainer}>
-          <View style={styles.tipHeader}>
-            <Text style={styles.tipTitle}>💡 Study Tip of the Day</Text>
-          </View>
-          <Text style={styles.tipText}>
-            Try the Feynman Technique: Explain concepts in simple terms as if teaching someone else. 
-            Use the AI assistant to practice explaining topics from your textbooks!
+      {/* Results */}
+      <View style={styles.resultsSection}>
+        <View style={[
+          styles.resultsHeader, 
+          { 
+            paddingHorizontal: responsiveValues.horizontalPadding,
+            paddingVertical: responsiveValues.isLargeScreen ? 24 : responsiveValues.isTablet ? 20 : 16
+          }
+        ]}>
+          <Text style={[
+            styles.resultsCount,
+            { fontSize: responsiveValues.isLargeScreen ? 18 : 16 }
+          ]}>
+            {filteredBooks.length} book{filteredBooks.length !== 1 ? 's' : ''} found
           </Text>
-          <TouchableOpacity style={styles.tipButton} onPress={() => router.push('/history')}>
-            <Text style={styles.tipButtonText}>Try with AI Assistant</Text>
-          </TouchableOpacity>
+          {searchQuery && (
+            <TouchableOpacity onPress={() => setSearchQuery('')}>
+              <Text style={[
+                styles.clearSearch,
+                { fontSize: responsiveValues.isLargeScreen ? 16 : 14 }
+              ]}>Clear</Text>
+            </TouchableOpacity>
+          )}
         </View>
-      </ScrollView>
+
+        {filteredBooks.length > 0 ? (
+          <FlatList
+            data={filteredBooks}
+            renderItem={renderBookItem}
+            keyExtractor={(item) => item.id}
+            numColumns={responsiveValues.numColumns}
+            key={`${viewMode}-${responsiveValues.numColumns}`} // Force re-render when view mode or columns change
+            contentContainerStyle={[
+              styles.booksContainer,
+              { 
+                paddingHorizontal: responsiveValues.spacing,
+                paddingBottom: responsiveValues.spacing 
+              }
+            ]}
+            showsVerticalScrollIndicator={false}
+            columnWrapperStyle={viewMode === 'grid' && responsiveValues.numColumns > 1 ? styles.row : null}
+          />
+        ) : (
+          <EmptyState 
+            message="No books found" 
+            subMessage={searchQuery ? "Try different search terms" : "Try adjusting your filters"} 
+          />
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -209,58 +316,77 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F8F9FA',
   },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    paddingBottom: 16,
-  },
-  headerLeft: {
+  loadingContainer: {
     flex: 1,
-  },
-  greeting: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#212121',
-    marginBottom: 4,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#757575',
-    fontWeight: 'normal',
-  },
-  headerIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#FFF3E0',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 24,
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#757575',
+    fontWeight: '500',
   },
-  searchInputContainer: {
-    flex: 1,
+  header: {
+    backgroundColor: '#3F51B5',
+    paddingTop: 8,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+  },
+  headerTablet: {
+    paddingHorizontal: 40,
+    paddingBottom: 24,
+  },
+  headerLargeScreen: {
+    paddingBottom: 28,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+  },
+  headerTitleTablet: {
+    fontSize: 32,
+  },
+  headerTitleLargeScreen: {
+    fontSize: 36,
+  },
+  viewToggle: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 8,
+    padding: 4,
+  },
+  viewButton: {
+    padding: 8,
+    borderRadius: 6,
+  },
+  activeViewButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     paddingHorizontal: 16,
     height: 48,
-    marginRight: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+  },
+  searchContainerTablet: {
+    height: 52,
+    borderRadius: 16,
+    paddingHorizontal: 20,
+  },
+  searchContainerLargeScreen: {
+    height: 56,
+    borderRadius: 16,
+    paddingHorizontal: 24,
   },
   searchIcon: {
     marginRight: 12,
@@ -271,160 +397,68 @@ const styles = StyleSheet.create({
     color: '#212121',
     fontWeight: 'normal',
   },
-  searchButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
-    backgroundColor: '#3F51B5',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#3F51B5',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
+  filtersSection: {
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
-  statsContainer: {
+  filtersScroll: {
     paddingHorizontal: 20,
-    marginBottom: 24,
+    paddingVertical: 16,
   },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#212121',
-    marginBottom: 16,
+  filtersScrollTablet: {
+    paddingHorizontal: 40,
+    paddingVertical: 20,
   },
-  statsGrid: {
+  filtersScrollLargeScreen: {
+    paddingHorizontal: 48,
+    paddingVertical: 24,
+  },
+  filterGroup: {
+    marginRight: 24,
+  },
+  resultsSection: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  resultsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-  },
-  statCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
-    width: (width - 60) / 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  statIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#212121',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 10,
-    color: '#757575',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  actionsContainer: {
     paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  actionsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  actionCard: {
+    paddingVertical: 16,
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    width: (width - 52) / 2,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
   },
-  actionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 12,
+  resultsHeaderTablet: {
+    paddingHorizontal: 40,
+    paddingVertical: 20,
   },
-  actionTitle: {
+  resultsHeaderLargeScreen: {
+    paddingHorizontal: 48,
+    paddingVertical: 24,
+  },
+  resultsCount: {
     fontSize: 16,
     fontWeight: '600',
     color: '#212121',
-    marginBottom: 4,
   },
-  actionSubtitle: {
-    fontSize: 12,
-    color: '#757575',
-    fontWeight: 'normal',
-  },
-  recentContainer: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  seeAllText: {
+  clearSearch: {
     fontSize: 14,
     color: '#3F51B5',
     fontWeight: '500',
   },
-  recentScrollContent: {
-    paddingLeft: 20,
-    paddingRight: 8,
+  booksContainer: {
+    paddingTop: 20,
   },
-  recentBookCard: {
-    marginRight: 12,
+  row: {
+    justifyContent: 'flex-start',
   },
-  tipContainer: {
-    backgroundColor: '#E8F5E8',
-    borderRadius: 16,
-    margin: 20,
-    padding: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
+  gridItem: {
+    // Width and margins are set dynamically in renderBookItem
   },
-  tipHeader: {
-    marginBottom: 12,
-  },
-  tipTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2E7D32',
-  },
-  tipText: {
-    fontSize: 14,
-    color: '#2E7D32',
-    lineHeight: 20,
-    marginBottom: 16,
-    fontWeight: 'normal',
-  },
-  tipButton: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    alignSelf: 'flex-start',
-  },
-  tipButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
+  listItem: {
+    // Width and margins are set dynamically in renderBookItem
   },
 });
