@@ -8,14 +8,14 @@ interface QuizInterfaceProps {
   visible: boolean;
   onClose: () => void;
   bookName?: string;
-  documentId?: string; // For saving/loading quiz questions from summaries
+  documentIds: string[]; // Array of document IDs for generating questions from multiple summaries
 }
 
 export const QuizInterface: React.FC<QuizInterfaceProps> = ({
   visible,
   onClose,
   bookName = "Book",
-  documentId
+  documentIds
 }) => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [questionsLoading, setQuestionsLoading] = useState(false);
@@ -28,10 +28,10 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
 
   // Load quiz questions when component becomes visible
   useEffect(() => {
-    if (visible && documentId) {
+    if (visible && documentIds.length > 0) {
       loadQuizQuestions();
     }
-  }, [visible, documentId]);
+  }, [visible, documentIds]);
 
   const loadQuizQuestions = async () => {
     setQuestionsLoading(true);
@@ -42,7 +42,7 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
       const { data, error } = await supabase
         .from('quiz_questions')
         .select('questions')
-        .eq('document_id', documentId)
+        .eq('document_id', documentIds[0])
         .single();
 
       if (error) {
@@ -68,8 +68,8 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
   };
 
   const handleGenerateQuestions = async () => {
-    if (!documentId) {
-      setQuestionsError('Missing document ID');
+    if (documentIds.length === 0) {
+      setQuestionsError('Missing document IDs');
       return;
     }
 
@@ -77,27 +77,29 @@ export const QuizInterface: React.FC<QuizInterfaceProps> = ({
     setQuestionsError(null);
 
     try {
-      // 1. Fetch document summary from summaries table
+      // 1. Fetch document summaries from summaries table for all documents
       const { data, error } = await supabase
         .from('summaries')
         .select('summary')
-        .eq('document_id', documentId)
-        .single();
+        .in('document_id', documentIds);
 
-      if (error || !data?.summary) {
+      if (error || !data || data.length === 0) {
         setQuestionsError(error?.code === 'PGRST116' || error?.code === '406' 
-          ? "No document summary found. Please generate a summary first." 
-          : "Failed to fetch document summary");
+          ? "No document summaries found. Please generate summaries first." 
+          : "Failed to fetch document summaries");
         return;
       }
 
-      // 2. Generate quiz questions from summary using OpenAI
-      const generatedQuestions = await generateQuizQuestions(data.summary);
+      // Combine all summaries
+      const combinedSummary = data.map(d => d.summary).join('\n\n');
 
-      // 3. Save questions to Supabase
+      // 2. Generate quiz questions from combined summary using OpenAI
+      const generatedQuestions = await generateQuizQuestions(combinedSummary);
+
+      // 3. Save questions to Supabase using the first document ID as reference
       const { error: saveError } = await supabase
         .from("quiz_questions")
-        .insert([{ document_id: documentId, questions: generatedQuestions }]);
+        .insert([{ document_id: documentIds[0], questions: generatedQuestions }]);
 
       if (saveError) {
         setQuestionsError("Failed to save quiz questions");
