@@ -16,9 +16,7 @@
       "bundler": "metro",
       "output": "single",
       "favicon": "./assets/images/favicon.png",
-      "meta": {
-        "dicoding:email": "robbyakbar0@gmail.com"
-      }
+      "template": "./web/index.html"
     },
     "plugins": [
       "expo-router",
