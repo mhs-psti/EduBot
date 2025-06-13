@@ -28,7 +28,7 @@
     "expo-haptics": "~14.1.3",
     "expo-linear-gradient": "~14.1.3",
     "expo-linking": "~7.1.3",
-    "expo-router": "^5.0.7",
+    "expo-router": "^5.1.0",
     "expo-splash-screen": "~0.30.6",
     "expo-status-bar": "~2.2.2",
     "expo-symbols": "~0.4.3",
@@ -59,12 +59,14 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@expo/webpack-config": "^19.0.1",
     "@react-native-community/cli": "latest",
     "@types/lodash.debounce": "^4.0.9",
     "@types/mime-types": "^2.1.4",
     "@types/react": "~19.0.10",
     "@types/react-native": "^0.72.8",
     "babel-preset-expo": "^13.1.11",
+    "html-webpack-plugin": "^5.6.3",
     "typescript": "~5.8.3"
   }
 }
