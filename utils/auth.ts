@@ -6,7 +6,7 @@ export async function signUp({ email, password }: { email: string; password: str
     email, 
     password,
     options: {
-      emailRedirectTo: undefined // You can set a redirect URL here if needed
+      emailRedirectTo: process.env.EXPO_PUBLIC_SITE_URL
     }
   });
 }
@@ -19,7 +19,7 @@ export async function signIn({ email, password }: { email: string; password: str
 // Forgot Password
 export async function resetPassword({ email }: { email: string }) {
   return await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: undefined // You can set a redirect URL here if needed
+    redirectTo: process.env.EXPO_PUBLIC_SITE_URL
   });
 }
 
