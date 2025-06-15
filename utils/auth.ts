@@ -1,12 +1,29 @@
 import { supabase } from './app';
 
+// Helper function to get the correct redirect URL
+const getRedirectURL = () => {
+  // For development, use the correct port
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:8081/auth/callback';
+  }
+  
+  // For production, use the site URL
+  let url = process.env.EXPO_PUBLIC_SITE_URL ?? 'http://localhost:8081';
+  // Make sure to include `https://` when not localhost
+  url = url.startsWith('http') ? url : `https://${url}`;
+  // Remove trailing slash if exists
+  url = url.endsWith('/') ? url.slice(0, -1) : url;
+  // Add the auth callback path
+  return `${url}/auth/callback`;
+};
+
 // Sign Up
 export async function signUp({ email, password }: { email: string; password: string }) {
   return await supabase.auth.signUp({ 
     email, 
     password,
     options: {
-      emailRedirectTo: process.env.EXPO_PUBLIC_SITE_URL
+      emailRedirectTo: getRedirectURL()
     }
   });
 }
@@ -19,7 +36,7 @@ export async function signIn({ email, password }: { email: string; password: str
 // Forgot Password
 export async function resetPassword({ email }: { email: string }) {
   return await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: process.env.EXPO_PUBLIC_SITE_URL
+    redirectTo: getRedirectURL()
   });
 }
 
